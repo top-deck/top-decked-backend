@@ -8,7 +8,6 @@ router = APIRouter(tags=["Jogadores"])
 @router.post("/jogadores/", response_model=JogadorPublico)
 def create_jogador(jogador: JogadorCriar, session: SessionDep):
     existing_jogador = session.exec(select(Jogador).where(Jogador.email == jogador.email)).first()
-    print("-=-"*50)
     if existing_jogador:
         raise HTTPException(status_code=400, detail="Email ja registrado")
     novo_jogador = Jogador.from_orm(jogador)
@@ -16,7 +15,6 @@ def create_jogador(jogador: JogadorCriar, session: SessionDep):
     session.commit()
     session.refresh(novo_jogador)
     return novo_jogador
-
 
 @router.get("/jogadores/{jogador_id}", response_model=JogadorPublico)
 def read_jogador(jogador_id: int, session: SessionDep):
