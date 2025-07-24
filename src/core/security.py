@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from sqlmodel import Session, select
 
-from src.models.Usuario import Usuario
+from models.Usuario import Usuario
 
 # to get a string like this run:
 # openssl rand -hex 32

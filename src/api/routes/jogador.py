@@ -1,20 +1,31 @@
+from sqlite3 import IntegrityError
 from fastapi import APIRouter, HTTPException
 from sqlmodel import select
-from src.models import Jogador, JogadorPublico, JogadorUpdate, JogadorCriar
-from src.core import SessionDep
+from models import Jogador, JogadorPublico, JogadorUpdate, JogadorCriar
+from core import SessionDep
+from models.Usuario import Usuario
 
 router = APIRouter(tags=["Jogadores"])
 
 @router.post("/jogadores/", response_model=JogadorPublico)
 def create_jogador(jogador: JogadorCriar, session: SessionDep):
-    existing_jogador = session.exec(select(Jogador).where(Jogador.email == jogador.email)).first()
-    if existing_jogador:
-        raise HTTPException(status_code=400, detail="Email ja registrado")
-    novo_jogador = Jogador.from_orm(jogador)
-    session.add(novo_jogador)
+    novo_usuario = Usuario(
+        email=jogador.usuario.email
+    )
+    novo_usuario.set_senha(jogador.usuario.senha)
+    session.add(novo_usuario)
     session.commit()
-    session.refresh(novo_jogador)
-    return novo_jogador
+    session.refresh(novo_usuario)
+
+    db_jogador = Jogador(
+        name=jogador.name,
+        usuario_id=novo_usuario.id,
+        usuario=novo_usuario
+    )
+    session.add(db_jogador)
+    session.commit()
+    session.refresh(db_jogador)
+    return db_jogador
 
 @router.get("/jogadores/{jogador_id}", response_model=JogadorPublico)
 def read_jogador(jogador_id: int, session: SessionDep):

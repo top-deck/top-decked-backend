@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.api.routes import loja, jogador, login
+from api.routes import loja, jogador, login
 
 
 api_router = APIRouter()

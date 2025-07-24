@@ -1,6 +1,7 @@
 from fastapi import HTTPException, APIRouter
-from src.core import SessionDep
-from src.models import LojaCriar, LojaPublico, LojaAtualizar, Loja
+from core import SessionDep
+from models import LojaCriar, LojaPublico, LojaAtualizar, Loja
+from models.Usuario import Usuario
 from sqlmodel import select
 
 router = APIRouter(tags=["Lojas"])
@@ -8,7 +9,20 @@ router = APIRouter(tags=["Lojas"])
 
 @router.post("/lojas/", response_model=LojaPublico)
 def criar_loja(loja: LojaCriar, session: SessionDep):
-    db_loja = Loja.model_validate(loja)
+    novo_usuario = Usuario(
+        email=loja.usuario.email
+    )
+    novo_usuario.set_senha(loja.usuario.senha)
+    session.add(novo_usuario)
+    session.commit()
+    session.refresh(novo_usuario)
+
+    db_loja = Loja(
+        nome=loja.nome,
+        endereco=loja.endereco,
+        usuario_id=novo_usuario.id,
+        usuario=novo_usuario
+    )
     session.add(db_loja)
     session.commit()
     session.refresh(db_loja)
