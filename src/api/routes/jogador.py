@@ -1,25 +1,30 @@
 from sqlite3 import IntegrityError
 from fastapi import APIRouter, HTTPException
 from sqlmodel import select
-from models import Jogador, JogadorPublico, JogadorUpdate, JogadorCriar
-from core import SessionDep
-from models.Usuario import Usuario
+from src.models.Jogador import Jogador, JogadorPublico, JogadorUpdate, JogadorCriar
+from src.core.db import SessionDep
+from src.models.Usuario import Usuario
+from src.services.UsuarioService import verificar_novo_usuario
+
 
 router = APIRouter(tags=["Jogadores"])
 
 @router.post("/jogadores/", response_model=JogadorPublico)
 def create_jogador(jogador: JogadorCriar, session: SessionDep):
+    verificar_novo_usuario(jogador.email, session)
+
+
     novo_usuario = Usuario(
-        email=jogador.usuario.email
+        email=jogador.email,
+        tipo="jogador"
     )
-    novo_usuario.set_senha(jogador.usuario.senha)
+    novo_usuario.set_senha(jogador.senha)
     session.add(novo_usuario)
     session.commit()
     session.refresh(novo_usuario)
 
     db_jogador = Jogador(
-        name=jogador.name,
-        usuario_id=novo_usuario.id,
+        nome=jogador.name,
         usuario=novo_usuario
     )
     session.add(db_jogador)

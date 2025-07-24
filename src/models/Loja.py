@@ -1,5 +1,5 @@
 from sqlmodel import Field, SQLModel, Relationship
-from models.Usuario import UsuarioCriar, Usuario
+from src.models.Usuario import Usuario
 from typing import Optional
 
 
@@ -9,7 +9,7 @@ class LojaBase(SQLModel):
 
 class Loja(LojaBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    usuario_id: int = Field(foreign_key="usuario.id")
+    usuario_id: int = Field(foreign_key="usuario.id", unique=True)
     usuario: Usuario = Relationship(sa_relationship_kwargs={"lazy": "joined"})
 
 class LojaPublico(LojaBase):
@@ -17,10 +17,12 @@ class LojaPublico(LojaBase):
 
 
 class LojaCriar(LojaBase):
-    usuario: UsuarioCriar | None = Field(default=None)
+    email: str | None = Field(default=None)
+    senha: str | None = Field(default=None)
 
 
 class LojaAtualizar(LojaBase):
     nome: str | None = None
     endereco: str | None = None
-    usuario: Usuario | None = None
+    email: str | None = None
+    senha: str | None = None
