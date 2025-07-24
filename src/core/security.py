@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from src.models.Usuario import Usuario
-from src.core.db import SessionDep
+from src.core.db import SessionDep, get_session
 from fastapi.security import OAuth2PasswordBearer
 
 
@@ -22,7 +22,8 @@ SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login/token")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class Token(BaseModel):
     access_token: str
@@ -30,12 +31,12 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
+    id : int | None = None
+    tipo: str | None = None
+    nome: str | None = None
     email: str | None = None
-
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+    usuario_id: int | None = None
+    endereco: str | None = None
 
 
 def verificar_senha(plain_password, hashed_password):
@@ -71,24 +72,44 @@ def criar_token_de_acesso(dados: dict, delta_expiracao: timedelta | None = None)
     encoded_jwt = jwt.encode(criptografar, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-
-async def retornar_usuario_atual(token: Annotated[str, Depends(oauth2_scheme)]):
-    credenciais_excecao = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+async def _validar_token(payload) -> bool:
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("email")
         if email is None:
-            raise credenciais_excecao
-        token_data = TokenData(email=email)
-        
+            return False
     except InvalidTokenError:
+        return False
+    
+    session = get_session()
+    usuario = session.exec(select(Usuario).where(
+        Usuario.email == email)).first()
+    if usuario is None:
+        return False
+    return True
+    
+async def retornar_usuario_atual(token: Annotated[str, Depends(oauth2_scheme)]):
+    credenciais_excecao = HTTPException(
+        status_code=401,
+        detail="Autenticação negada",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    print("*==*"*30)
+    print(payload)
+    print("*==*"*30)
+    if not _validar_token(payload=payload):
         raise credenciais_excecao
     
-    user = get_user(fake_users_db, username=token_data.username)
-    if user is None:
-        raise credenciais_excecao
-    return user
+    id = payload.get("id")
+    tipo = payload.get("tipo")
+    nome = payload.get("nome")
+    email = payload.get("email")
+    usuario_id = payload.get("usuario_id")
+    
+    token_data = TokenData(id=id, tipo=tipo, nome=nome, email=email, usuario_id=usuario_id)
+    
+    if tipo == "loja":
+        token_data.endereco = payload.get("endereco")
+
+    return token_data

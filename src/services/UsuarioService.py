@@ -14,11 +14,11 @@ def verificar_novo_usuario(email: str, session: SessionDep) -> str:
         num_usuarios = session.scalar(select(func.count(Usuario.id)).where(Usuario.email == email))
 
         if num_usuarios > 0:
-            raise HTTPException(status_code=400, detail=f"e-mail já cadastrado: {email}")
+            raise HTTPException(status_code=400, detail=f"e-mail já cadastrado: '{email}'")
         
         return valid.email
     except EmailNotValidError:
-        raise HTTPException(status_code=400, detail=f"e-mail inválido: {email}")
+        raise HTTPException(status_code=400, detail=f"e-mail inválido: '{email}'")
 
 
 def retornar_info_por_usuario(usuario: Usuario, session: SessionDep) -> dict:
@@ -30,10 +30,11 @@ def retornar_info_por_usuario(usuario: Usuario, session: SessionDep) -> dict:
     else:
         linha_db_info = session.exec(select(Loja).where(Loja.usuario_id == usuario.id)).first()
         infos["endereco"] = linha_db_info.endereco
-        infos["email"] = usuario.email
-
+        
+    infos["id"] = linha_db_info.id
     infos["nome"] = linha_db_info.nome
     infos["usuario_id"] = linha_db_info.usuario_id
     infos["email"] = usuario.email
-        
+    infos["tipo"] = usuario.tipo
+   
     return infos

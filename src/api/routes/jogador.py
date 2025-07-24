@@ -24,7 +24,7 @@ def create_jogador(jogador: JogadorCriar, session: SessionDep):
     session.refresh(novo_usuario)
 
     db_jogador = Jogador(
-        nome=jogador.name,
+        nome=jogador.nome,
         usuario=novo_usuario
     )
     session.add(db_jogador)
