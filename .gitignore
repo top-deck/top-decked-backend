@@ -175,3 +175,7 @@ cython_debug/
 
 # PyCharm
 /.idea/
+
+
+# Tests
+test.db
