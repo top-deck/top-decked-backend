@@ -41,16 +41,18 @@ def read_jogador(jogador_id: int, session: SessionDep):
 
 @router.get("/jogadores/", response_model=list[JogadorPublico])
 def get_jogadores(session : SessionDep): 
-    return session.exec(select(Jogador))
+    return session.exec(select(Jogador)).all()
     
 @router.put("/jogadores/{jogador_id}", response_model=JogadorPublico)
 def update_jogador(jogador_id: int, jogador: JogadorUpdate, session: SessionDep):
     existing_jogador = session.get(Jogador, jogador_id)
     if not existing_jogador:
         raise HTTPException(status_code=404, detail="Jogador nao encontrado")
-    
-    hero_data = jogador.model_dump(exclude_unset=True)
-    existing_jogador.sqlmodel_update(hero_data)
+    if jogador.senha:
+        existing_jogador.usuario.set_senha(jogador.senha)
+        session.add(existing_jogador.usuario)
+    jogador_data = jogador.model_dump(exclude_unset=True, exclude={"senha"})
+    existing_jogador.sqlmodel_update(jogador_data)
     session.add(existing_jogador)
     session.commit()
     session.refresh(existing_jogador)

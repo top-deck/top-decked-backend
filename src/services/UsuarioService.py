@@ -16,7 +16,7 @@ def verificar_novo_usuario(email: str, session: SessionDep) -> str:
         if num_usuarios > 0:
             raise HTTPException(status_code=400, detail=f"e-mail já cadastrado: '{email}'")
         
-        return valid.email
+        return valid.normalized
     except EmailNotValidError:
         raise HTTPException(status_code=400, detail=f"e-mail inválido: '{email}'")
 
