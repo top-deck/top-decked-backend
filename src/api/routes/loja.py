@@ -53,13 +53,19 @@ def atualizar_loja(loja_id: int, loja: LojaAtualizar, session: SessionDep):
     loja_db = session.get(Loja, loja_id)
     if not loja_db:
         raise HTTPException(status_code=404, detail="Loja não encontrada")
+
     loja_data = loja.model_dump(exclude_unset=True)
+
+    if "senha" in loja_data and loja_data["senha"]:
+        loja_db.usuario.set_senha(loja_data["senha"])
+        session.add(loja_db.usuario)
+        loja_data.pop("senha")
+
     loja_db.sqlmodel_update(loja_data)
     session.add(loja_db)
     session.commit()
     session.refresh(loja_db)
     return loja_db
-
 
 @router.delete("/lojas/{loja_id}")
 def apagar_loja(loja_id: int, session: SessionDep):

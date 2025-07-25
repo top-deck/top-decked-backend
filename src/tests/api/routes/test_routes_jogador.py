@@ -1,10 +1,7 @@
 from unittest.mock import patch
-
 from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
 
 from src.tests.db.config import app
-from src.core.db import get_session
 
 
 client = TestClient(app)
