@@ -95,9 +95,7 @@ async def retornar_usuario_atual(token: Annotated[str, Depends(oauth2_scheme)]):
     )
     
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    print("*==*"*30)
     print(payload)
-    print("*==*"*30)
     if not _validar_token(payload=payload):
         raise credenciais_excecao
     
