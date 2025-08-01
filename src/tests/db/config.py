@@ -5,9 +5,9 @@ from sqlmodel import Session, SQLModel, create_engine
 from src.core.db import get_session
 from src.main import app
 
-current_file_path = Path(__file__).resolve()
+current_file_path = Path(__file__).resolve().parent
 
-db_path = "test.db"
+db_path = current_file_path / "test.db"
 
 SQLALCHEMY_DATABASE_URL = f"sqlite:///{db_path}"
 
