@@ -17,8 +17,7 @@ def importar_torneio(session: SessionDep, arquivo: UploadFile):
     except ET.ParseError:
         raise HTTPException(status_code=400, detail="Arquivo XML inválido")
 
-    torneio = Torneio()
-    _importar_metadados(xml, torneio)
+    torneio = _importar_metadados(xml, session)
     session.add(torneio)
     session.commit()
     session.refresh(torneio)
@@ -33,7 +32,7 @@ def importar_torneio(session: SessionDep, arquivo: UploadFile):
     return torneio
 
 
-def _importar_metadados(xml: ET.Element, torneio: Torneio):
+def _importar_metadados(xml: ET.Element, session: SessionDep):
     dados = xml.find("data")
     if dados is None:
         raise HTTPException(
@@ -55,12 +54,12 @@ def _importar_metadados(xml: ET.Element, torneio: Torneio):
         raise HTTPException(
             status_code=400, detail="Data de início em formato inválido")
 
-    torneio.id = id
-    torneio.cidade = cidade
-    torneio.estado = estado if estado else None
-    torneio.tempo_por_rodada = int(tempo_por_rodada)
-    torneio.data_inicio = data_inicio
-
+    return Torneio(id=id,
+                   cidade=cidade,
+                   estado=estado,
+                   tempo_por_rodada=tempo_por_rodada,
+                   data_inicio=data_inicio,
+                   finalizado=True)
 
 def _importar_jogadores(xml: ET.Element, session: SessionDep):
     jogadores = []
@@ -105,15 +104,16 @@ def _criar_relacao_jogador_torneio(jogador_id: int, torneio_id: str, session: Se
 
 
 def _importar_rodadas(xml: ET.Element, torneio_id: str, session: SessionDep):
-    rodadas = xml.find("rounds")
-    if rodadas is None:
-        return
+    pods = xml.find("pods").findall("pod")
+    rodadas = []
+    for pod in pods:
+        rodadas.extend(pod.find("rounds").findall("round"))
     
-    for rodada in rodadas.findall("round"):
+    for rodada in rodadas:
         num_rodada = int(rodada.get("number"))
         partidas = rodada.find("matches")
         
-        partidas = _importar_partidas(partidas, torneio_id, num_rodada, session)
+        _importar_partidas(partidas, torneio_id, num_rodada, session)
 
         
 def _importar_partidas(partidas: ET.Element, torneio_id: str, num_rodada: int, session: SessionDep):
@@ -133,7 +133,7 @@ def _importar_partidas(partidas: ET.Element, torneio_id: str, num_rodada: int, s
         else:
             vencedor = None
         
-        mesa = partida.find("tablenumber")
+        mesa = int(partida.findtext("tablenumber"))
         
         timestamp_str = partida.findtext("timestamp")
         try:
@@ -150,11 +150,9 @@ def _importar_partidas(partidas: ET.Element, torneio_id: str, num_rodada: int, s
                 mesa=mesa,
                 data_de_inicio=data_de_inicio
             )
-        print("oi")
         session.add(partida)
         session.commit()
         session.refresh(partida)
-        print("oii")
         partidas_criadas.append(partida)
         
 
