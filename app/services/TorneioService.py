@@ -10,14 +10,14 @@ from app.models.JogadorTorneioRelacao import JogadorTorneioRelacao
 from app.models.Rodada import Rodada
 
 
-def importar_torneio(session: SessionDep, arquivo: UploadFile):
+def importar_torneio(session: SessionDep, arquivo: UploadFile, loja_id: int):
     dados = arquivo.file.read()
     try:
         xml = ET.fromstring(dados)
     except ET.ParseError:
         raise HTTPException(status_code=400, detail="Arquivo XML inválido")
 
-    torneio = _importar_metadados(xml, session)
+    torneio = _importar_metadados(xml, session, loja_id)
     session.add(torneio)
     session.commit()
     session.refresh(torneio)
@@ -32,7 +32,7 @@ def importar_torneio(session: SessionDep, arquivo: UploadFile):
     return torneio
 
 
-def _importar_metadados(xml: ET.Element, session: SessionDep):
+def _importar_metadados(xml: ET.Element, session: SessionDep, loja_id: int):
     dados = xml.find("data")
     if dados is None:
         raise HTTPException(
@@ -59,6 +59,7 @@ def _importar_metadados(xml: ET.Element, session: SessionDep):
                    estado=estado,
                    tempo_por_rodada=tempo_por_rodada,
                    data_inicio=data_inicio,
+                   loja_id=loja_id,
                    finalizado=True)
 
 def _importar_jogadores(xml: ET.Element, session: SessionDep):
