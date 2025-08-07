@@ -2,8 +2,8 @@ from sqlalchemy import create_engine
 from pathlib import Path
 from sqlmodel import Session, SQLModel, create_engine
 
-from src.core.db import get_session
-from src.main import app
+from app.core.db import get_session
+from app.main import app
 
 current_file_path = Path(__file__).resolve().parent
 

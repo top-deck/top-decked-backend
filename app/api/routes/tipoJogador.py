@@ -1,14 +1,16 @@
-from src.core.db import SessionDep
-from src.models.TipoJogador import TipoJogador
+from app.core.db import SessionDep
+from app.models.TipoJogador import TipoJogador
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
-from src.api.routes.login import retornar_usuario_atual, TokenData
+from app.api.routes.login import retornar_usuario_atual, TokenData
 
-from src.models.TipoJogador import TipoJogadorBase, TipoJogador, TipoJogadorPublico
+from app.models.TipoJogador import TipoJogadorBase, TipoJogador, TipoJogadorPublico
 
-router = APIRouter(tags=["LojasTipoJogador"])
+router = APIRouter(
+    prefix="/lojas/tipoJogador",
+    tags=["Tipo de Jogador"])
 
-@router.post("/lojasTipoJogador/", response_model=TipoJogadorPublico)
+@router.post("/", response_model=TipoJogadorPublico)
 def criar_tipo_jogador(session: SessionDep, tipo_jogador: TipoJogadorBase, usuario: Annotated[TokenData, Depends(retornar_usuario_atual)]):
     if usuario.tipo != "loja":
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas lojas podem criar tipos de jogador.")
@@ -23,7 +25,7 @@ def criar_tipo_jogador(session: SessionDep, tipo_jogador: TipoJogadorBase, usuar
     session.refresh(novo_tipo_jogador)
     return novo_tipo_jogador
 
-@router.get("/lojasTipoJogador/", response_model=list[TipoJogadorPublico])
+@router.get("/", response_model=list[TipoJogadorPublico])
 def get_tipos_jogador(session: SessionDep, usuario: Annotated[TokenData, Depends(retornar_usuario_atual)]):
     tipos = session.query(TipoJogador).filter(
         TipoJogador.loja == usuario.id
@@ -32,7 +34,7 @@ def get_tipos_jogador(session: SessionDep, usuario: Annotated[TokenData, Depends
         raise HTTPException(status_code=404, detail="Nenhum tipo de jogador encontrado.")
     return tipos
 
-@router.get("/lojasTipoJogador/{tipo_id}", response_model=TipoJogadorPublico)
+@router.get("/{tipo_id}", response_model=TipoJogadorPublico)
 def get_tipo_jogador_por_id(
     tipo_id: int,
     session: SessionDep,
@@ -48,7 +50,7 @@ def get_tipo_jogador_por_id(
 
     return tipo
 
-@router.delete("/lojasTipoJogador/{tipo_id}", status_code=204)
+@router.delete("/{tipo_id}", status_code=204)
 def delete_tipo_jogador(
     tipo_id: int,
     session: SessionDep,

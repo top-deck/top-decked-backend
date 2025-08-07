@@ -11,19 +11,29 @@ from pydantic import BaseModel
 
 from sqlmodel import Session, select
 
-from src.models.Usuario import Usuario
-from src.core.db import SessionDep, get_session
+from app.models.Usuario import Usuario
+from app.core.db import SessionDep, get_session
 from fastapi.security import OAuth2PasswordBearer
 
+import os
 
-# to get a string like this run:
-# openssl rand -hex 32
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+SECRET_KEY = os.getenv("SECURITY_SECRET_KEY")
+ALGORITHM = os.getenv("SECURITY_ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("SECURITY_TOKEN_EXPIRATION")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login/token")
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+AUTENTICACAO_NEGADA = HTTPException(
+    status_code=401,
+    detail="Autenticação negada",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+PERMISSAO_NEGADA = HTTPException(
+    status_code=403,
+    detail="Permissão negada",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
+OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl="login/token")
+PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class Token(BaseModel):
     access_token: str
@@ -40,11 +50,11 @@ class TokenData(BaseModel):
 
 
 def verificar_senha(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    return PWD_CONTEXT.verify(plain_password, hashed_password)
 
 
 def retornar_senha_criptografada(password):
-    return pwd_context.hash(password)
+    return PWD_CONTEXT.hash(password)
 
 
 def retornar_usuario_pelo_email(email: str, session: SessionDep) -> Usuario | None:
@@ -55,10 +65,8 @@ def retornar_usuario_pelo_email(email: str, session: SessionDep) -> Usuario | No
 
 def autenticar(email: str, forms_senha: str, session: SessionDep) -> Usuario | None:
     db_user = retornar_usuario_pelo_email(session=session, email=email)
-    if not db_user:
-        return None
-    if not verificar_senha(forms_senha, db_user.senha):
-        return None
+    if not db_user or verificar_senha(forms_senha, db_user.senha):
+        raise AUTENTICACAO_NEGADA
     return db_user
 
 
@@ -87,17 +95,10 @@ async def _validar_token(payload) -> bool:
         return False
     return True
     
-async def retornar_usuario_atual(token: Annotated[str, Depends(oauth2_scheme)]):
-    credenciais_excecao = HTTPException(
-        status_code=401,
-        detail="Autenticação negada",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    
+async def retornar_usuario_atual(token: Annotated[str, Depends(OAUTH2_SCHEME)]):
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    print(payload)
     if not _validar_token(payload=payload):
-        raise credenciais_excecao
+        raise AUTENTICACAO_NEGADA
     
     id = payload.get("id")
     tipo = payload.get("tipo")
@@ -110,4 +111,10 @@ async def retornar_usuario_atual(token: Annotated[str, Depends(oauth2_scheme)]):
     if tipo == "loja":
         token_data.endereco = payload.get("endereco")
 
+    return token_data
+
+async def retornar_loja_atual(token_data: Annotated[str, Depends(retornar_usuario_atual)]):
+    if not token_data.tipo == "loja":
+        raise PERMISSAO_NEGADA
+    
     return token_data

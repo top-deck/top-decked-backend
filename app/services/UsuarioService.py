@@ -1,12 +1,12 @@
-from src.core.db import SessionDep
+from app.core.db import SessionDep
 from email_validator import validate_email, EmailNotValidError
 from fastapi import HTTPException
-from src.models.Usuario import Usuario
-from src.models.Jogador import Jogador
-from src.models.Loja import Loja
+from app.models.Usuario import Usuario
+from app.models.Jogador import Jogador
+from app.models.Loja import Loja
 from sqlmodel import select
 from sqlalchemy import func
-from src.core.security import oauth2_scheme
+from app.core.security import OAUTH2_SCHEME
 
 def verificar_novo_usuario(email: str, session: SessionDep) -> str:
     try:

@@ -1,14 +1,16 @@
 from fastapi import HTTPException, APIRouter
-from src.core.db import SessionDep
-from src.models.Loja import LojaCriar, LojaPublico, LojaAtualizar, Loja
-from src.models.Usuario import Usuario
+from app.core.db import SessionDep
+from app.models.Loja import LojaCriar, LojaPublico, LojaAtualizar, Loja
+from app.models.Usuario import Usuario
 from sqlmodel import select
-from src.services.UsuarioService import verificar_novo_usuario
+from app.services.UsuarioService import verificar_novo_usuario
 
 
-router = APIRouter(tags=["Lojas"])
+router = APIRouter(
+    prefix="/lojas",
+    tags=["Lojas"])
 
-@router.post("/lojas/", response_model=LojaPublico)
+@router.post("/", response_model=LojaPublico)
 def criar_loja(loja: LojaCriar, session: SessionDep):
     verificar_novo_usuario(loja.email, session)
     
@@ -34,13 +36,13 @@ def criar_loja(loja: LojaCriar, session: SessionDep):
     return db_loja
 
 
-@router.get("/lojas/", response_model=list[LojaPublico])
+@router.get("/", response_model=list[LojaPublico])
 def retornar_lojas(session: SessionDep):
     lojas = session.exec(select(Loja))
     return lojas
 
 
-@router.get("/lojas/{loja_id}", response_model=LojaPublico)
+@router.get("/{loja_id}", response_model=LojaPublico)
 def retornar_loja(loja_id: int, session: SessionDep):
     loja = session.get(Loja, loja_id)
     if not loja:
@@ -48,7 +50,7 @@ def retornar_loja(loja_id: int, session: SessionDep):
     return loja
 
 
-@router.patch("/lojas/{loja_id}", response_model=LojaPublico)
+@router.patch("/{loja_id}", response_model=LojaPublico)
 def atualizar_loja(loja_id: int, loja: LojaAtualizar, session: SessionDep):
     loja_db = session.get(Loja, loja_id)
     if not loja_db:
@@ -67,7 +69,7 @@ def atualizar_loja(loja_id: int, loja: LojaAtualizar, session: SessionDep):
     session.refresh(loja_db)
     return loja_db
 
-@router.delete("/lojas/{loja_id}")
+@router.delete("/{loja_id}")
 def apagar_loja(loja_id: int, session: SessionDep):
     loja = session.get(Loja, loja_id)
     if not loja:

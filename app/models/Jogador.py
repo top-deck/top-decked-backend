@@ -1,6 +1,6 @@
-from src.models.Usuario import Usuario
-from src.models.Torneio import Torneio
-from src.models.JogadorTorneioRelacao import JogadorTorneioRelacao
+from app.models.Usuario import Usuario
+from app.models.Torneio import Torneio
+from app.models.JogadorTorneioRelacao import JogadorTorneioRelacao
 from sqlmodel import Field,SQLModel, Relationship
 
 class JogadorBase(SQLModel):

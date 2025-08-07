@@ -1,5 +1,5 @@
 from sqlmodel import Field, SQLModel, Relationship
-from src.models.Usuario import Usuario
+from app.models.Usuario import Usuario
 from typing import Optional
 
 

@@ -1,13 +1,13 @@
-from src.core.db import SessionDep
+from app.core.db import SessionDep
 from fastapi import HTTPException, UploadFile
 from sqlmodel import select
 
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from src.models.Torneio import Torneio
-from src.models.Jogador import Jogador
-from src.models.JogadorTorneioRelacao import JogadorTorneioRelacao
-from src.models.Rodada import Rodada
+from app.models.Torneio import Torneio
+from app.models.Jogador import Jogador
+from app.models.JogadorTorneioRelacao import JogadorTorneioRelacao
+from app.models.Rodada import Rodada
 
 
 def importar_torneio(session: SessionDep, arquivo: UploadFile):

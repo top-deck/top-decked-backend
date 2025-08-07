@@ -4,10 +4,7 @@ from fastapi import Depends
 from sqlmodel import Session, SQLModel, create_engine
 
 
-from dotenv import load_dotenv
 import os
-
-load_dotenv(override=True)
 
 
 USER = os.getenv("DB_USER")
