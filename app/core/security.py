@@ -1,15 +1,13 @@
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-
+from fastapi import HTTPException
+from fastapi.security import OAuth2PasswordBearer
 import jwt
 from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 from pydantic import BaseModel
 
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from app.models.Usuario import Usuario
 from app.core.db import SessionDep, get_session
@@ -26,6 +24,7 @@ AUTENTICACAO_NEGADA = HTTPException(
     detail="Autenticação negada",
     headers={"WWW-Authenticate": "Bearer"},
 )
+
 PERMISSAO_NEGADA = HTTPException(
     status_code=403,
     detail="Permissão negada",
@@ -80,7 +79,7 @@ def criar_token_de_acesso(dados: dict, delta_expiracao: timedelta | None = None)
     encoded_jwt = jwt.encode(criptografar, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def _validar_token(payload) -> bool:
+async def validar_token(payload) -> bool:
     try:
         email = payload.get("email")
         if email is None:
@@ -94,27 +93,3 @@ async def _validar_token(payload) -> bool:
     if usuario is None:
         return False
     return True
-    
-async def retornar_usuario_atual(token: Annotated[str, Depends(OAUTH2_SCHEME)]):
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    if not _validar_token(payload=payload):
-        raise AUTENTICACAO_NEGADA
-    
-    id = payload.get("id")
-    tipo = payload.get("tipo")
-    nome = payload.get("nome")
-    email = payload.get("email")
-    usuario_id = payload.get("usuario_id")
-    
-    token_data = TokenData(id=id, tipo=tipo, nome=nome, email=email, usuario_id=usuario_id)
-    
-    if tipo == "loja":
-        token_data.endereco = payload.get("endereco")
-
-    return token_data
-
-async def retornar_loja_atual(token_data: Annotated[str, Depends(retornar_usuario_atual)]):
-    if not token_data.tipo == "loja":
-        raise PERMISSAO_NEGADA
-    
-    return token_data
