@@ -20,13 +20,7 @@ async def login(
     formulario: Annotated[OAuth2PasswordRequestForm, Depends()], session: SessionDep
     ) -> Token:
     usuario = autenticar(formulario.username, formulario.password, session)
-    if not usuario:
-        raise HTTPException(
-            status_code=401,
-            detail="E-mail ou senha incorreta",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-        
+
     dados = retornar_info_por_usuario(usuario, session)
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = criar_token_de_acesso(
