@@ -2,22 +2,23 @@ from app.core.db import SessionDep
 from app.models.TipoJogador import TipoJogador
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
-from app.api.routes.login import retornar_usuario_atual, TokenData
-
+from app.core.security import TokenData
+from app.dependencies import retornar_loja_atual
 from app.models.TipoJogador import TipoJogadorBase, TipoJogador, TipoJogadorPublico
+from sqlmodel import select
+
 
 router = APIRouter(
     prefix="/lojas/tipoJogador",
     tags=["Tipo de Jogador"])
 
 @router.post("/", response_model=TipoJogadorPublico)
-def criar_tipo_jogador(session: SessionDep, tipo_jogador: TipoJogadorBase, usuario: Annotated[TokenData, Depends(retornar_usuario_atual)]):
-    if usuario.tipo != "loja":
-        raise HTTPException(status_code=403, detail="Acesso negado. Apenas lojas podem criar tipos de jogador.")
+def criar_tipo_jogador(session: SessionDep, tipo_jogador: TipoJogadorBase, 
+                       loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
     
     novo_tipo_jogador = TipoJogador(
-        **tipo_jogador.dict(), 
-        loja=usuario.id
+        **tipo_jogador.model_dump(), 
+        loja=loja.id
     )
     
     session.add(novo_tipo_jogador)
@@ -26,10 +27,11 @@ def criar_tipo_jogador(session: SessionDep, tipo_jogador: TipoJogadorBase, usuar
     return novo_tipo_jogador
 
 @router.get("/", response_model=list[TipoJogadorPublico])
-def get_tipos_jogador(session: SessionDep, usuario: Annotated[TokenData, Depends(retornar_usuario_atual)]):
-    tipos = session.query(TipoJogador).filter(
-        TipoJogador.loja == usuario.id
-    ).all()
+def get_tipos_jogador(session: SessionDep, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
+    tipos = session.exec(select(TipoJogador).where(
+        TipoJogador.loja == loja.id
+    )).all()
+    
     if not tipos:
         raise HTTPException(status_code=404, detail="Nenhum tipo de jogador encontrado.")
     return tipos
@@ -38,12 +40,12 @@ def get_tipos_jogador(session: SessionDep, usuario: Annotated[TokenData, Depends
 def get_tipo_jogador_por_id(
     tipo_id: int,
     session: SessionDep,
-    usuario: Annotated[TokenData, Depends(retornar_usuario_atual)]
+    loja: Annotated[TokenData, Depends(retornar_loja_atual)]
 ):
-    tipo = session.query(TipoJogador).filter(
+    tipo = session.exec(select(TipoJogador).where(
         TipoJogador.id == tipo_id,
-        TipoJogador.loja == usuario.id
-    ).first()
+        TipoJogador.loja == loja.id
+    )).first()
 
     if not tipo:
         raise HTTPException(status_code=404, detail="Tipo de jogador não encontrado.")
@@ -54,12 +56,12 @@ def get_tipo_jogador_por_id(
 def delete_tipo_jogador(
     tipo_id: int,
     session: SessionDep,
-    usuario: Annotated[TokenData, Depends(retornar_usuario_atual)]
+    loja: Annotated[TokenData, Depends(retornar_loja_atual)]
 ):
-    tipo = session.query(TipoJogador).filter(
+    tipo = session.exec(select(TipoJogador).where(
         TipoJogador.id == tipo_id,
-        TipoJogador.loja == usuario.id
-    ).first()
+        TipoJogador.loja == loja.id
+    )).first()
 
     if not tipo:
         raise HTTPException(status_code=404, detail="Tipo de jogador não encontrado.")
