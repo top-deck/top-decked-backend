@@ -1,6 +1,6 @@
 from app.core.db import SessionDep
 from email_validator import validate_email, EmailNotValidError
-from fastapi import HTTPException
+from core.exception import EXCEPTIONS
 from app.models.Usuario import Usuario
 from app.models.Jogador import Jogador
 from app.models.Loja import Loja
@@ -14,11 +14,11 @@ def verificar_novo_usuario(email: str, session: SessionDep) -> str:
         num_usuarios = session.scalar(select(func.count(Usuario.id)).where(Usuario.email == email))
 
         if num_usuarios > 0:
-            raise HTTPException(status_code=400, detail=f"e-mail já cadastrado: '{email}'")
+            raise EXCEPTIONS.bad_request("e-mail já cadastrado: '{email}'")
         
         return valid.normalized
     except EmailNotValidError:
-        raise HTTPException(status_code=400, detail=f"e-mail inválido: '{email}'")
+        raise EXCEPTIONS.bad_request("e-mail inválido: '{email}'")
 
 
 def retornar_info_por_usuario(usuario: Usuario, session: SessionDep) -> dict:

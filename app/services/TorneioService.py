@@ -1,5 +1,6 @@
 from app.core.db import SessionDep
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
+from core.exception import EXCEPTIONS
 from sqlmodel import select
 
 import xml.etree.ElementTree as ET
@@ -15,7 +16,7 @@ def importar_torneio(session: SessionDep, arquivo: UploadFile, loja_id: int):
     try:
         xml = ET.fromstring(dados)
     except ET.ParseError:
-        raise HTTPException(status_code=400, detail="Arquivo XML inválido")
+        raise EXCEPTIONS.bad_request("Arquivo XML inválido")
 
     torneio = _importar_metadados(xml, session, loja_id)
     session.add(torneio)
@@ -35,8 +36,7 @@ def importar_torneio(session: SessionDep, arquivo: UploadFile, loja_id: int):
 def _importar_metadados(xml: ET.Element, session: SessionDep, loja_id: int):
     dados = xml.find("data")
     if dados is None:
-        raise HTTPException(
-            status_code=400, detail="Bloco 'data' não encontrado no XML")
+        raise EXCEPTIONS.bad_request("Bloco 'data' não encontrado no XML")
 
     id = dados.findtext("id")
     cidade = dados.findtext("city")
@@ -45,14 +45,12 @@ def _importar_metadados(xml: ET.Element, session: SessionDep, loja_id: int):
     data_inicio_str = dados.findtext("startdate")
     
     if not cidade or not data_inicio_str:
-        raise HTTPException(
-            status_code=400, detail="Cidade ou data de início ausentes")
+        raise EXCEPTIONS.bad_request("Cidade ou data de início ausentes")
 
     try:
         data_inicio = datetime.strptime(data_inicio_str, "%d/%m/%Y").date()
     except ValueError:
-        raise HTTPException(
-            status_code=400, detail="Data de início em formato inválido")
+        raise EXCEPTIONS.bad_request("Data de início em formato inválido")
 
     return Torneio(id=id,
                    cidade=cidade,
@@ -140,7 +138,7 @@ def _importar_partidas(partidas: ET.Element, torneio_id: str, num_rodada: int, s
         try:
             data_de_inicio = datetime.strptime(timestamp_str, "%d/%m/%Y %H:%M:%S").date()
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Data no formato inválido: {timestamp_str}")
+            raise EXCEPTIONS.bad_request("Data no formato inválido: {timestamp_str}")
         
         partida = Rodada(
             jogador1_id=jogador1_id,

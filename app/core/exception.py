@@ -1,6 +1,11 @@
 from fastapi import HTTPException
 
 class TopDeckedException:
+    def bad_request(message: str):
+        return HTTPException(
+            status_code=400,
+            detail=message)
+    
     def forbidden():
         return HTTPException(
             status_code=401,

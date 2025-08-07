@@ -1,5 +1,6 @@
-from fastapi import HTTPException, APIRouter
+from fastapi import APIRouter
 from app.core.db import SessionDep
+from app.core.exception import EXCEPTIONS
 from app.models.Loja import LojaCriar, LojaPublico, LojaAtualizar, Loja
 from app.models.Usuario import Usuario
 from sqlmodel import select
@@ -46,7 +47,7 @@ def retornar_lojas(session: SessionDep):
 def retornar_loja(loja_id: int, session: SessionDep):
     loja = session.get(Loja, loja_id)
     if not loja:
-        raise HTTPException(status_code=404, detail="Loja não encontrada")
+        raise EXCEPTIONS.not_found("Loja não encontrada")
     return loja
 
 
@@ -54,7 +55,7 @@ def retornar_loja(loja_id: int, session: SessionDep):
 def atualizar_loja(loja_id: int, loja: LojaAtualizar, session: SessionDep):
     loja_db = session.get(Loja, loja_id)
     if not loja_db:
-        raise HTTPException(status_code=404, detail="Loja não encontrada")
+        raise EXCEPTIONS.not_found("Loja não encontrada")
 
     loja_data = loja.model_dump(exclude_unset=True)
 
@@ -73,7 +74,7 @@ def atualizar_loja(loja_id: int, loja: LojaAtualizar, session: SessionDep):
 def apagar_loja(loja_id: int, session: SessionDep):
     loja = session.get(Loja, loja_id)
     if not loja:
-        raise HTTPException(status_code=404, detail="Loja não encontrada")
+        raise EXCEPTIONS.not_found("Loja não encontrada")
     session.delete(loja)
     session.commit()
     return {"ok": True}
