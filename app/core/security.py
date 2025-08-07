@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from jwt.exceptions import InvalidTokenError
@@ -11,6 +10,7 @@ from sqlmodel import select
 
 from app.models.Usuario import Usuario
 from app.core.db import SessionDep, get_session
+from app.core.exception import EXCEPTIONS
 from fastapi.security import OAuth2PasswordBearer
 
 import os
@@ -18,18 +18,6 @@ import os
 SECRET_KEY = os.getenv("SECURITY_SECRET_KEY")
 ALGORITHM = os.getenv("SECURITY_ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("SECURITY_TOKEN_EXPIRATION")
-
-AUTENTICACAO_NEGADA = HTTPException(
-    status_code=401,
-    detail="Autenticação negada",
-    headers={"WWW-Authenticate": "Bearer"},
-)
-
-PERMISSAO_NEGADA = HTTPException(
-    status_code=403,
-    detail="Permissão negada",
-    headers={"WWW-Authenticate": "Bearer"},
-)
 
 OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl="login/token")
 PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -65,7 +53,7 @@ def retornar_usuario_pelo_email(email: str, session: SessionDep) -> Usuario | No
 def autenticar(email: str, forms_senha: str, session: SessionDep) -> Usuario | None:
     db_user = retornar_usuario_pelo_email(session=session, email=email)
     if not db_user or verificar_senha(forms_senha, db_user.senha):
-        raise AUTENTICACAO_NEGADA
+        raise EXCEPTIONS.unauthorized()
     return db_user
 
 

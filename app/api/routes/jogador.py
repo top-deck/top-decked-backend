@@ -1,8 +1,8 @@
-from sqlite3 import IntegrityError
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from sqlmodel import select
 from app.models.Jogador import Jogador, JogadorPublico, JogadorUpdate, JogadorCriar
 from app.core.db import SessionDep
+from app.core.exception import EXCEPTIONS
 from app.models.Usuario import Usuario
 from app.services.UsuarioService import verificar_novo_usuario
 
@@ -38,7 +38,8 @@ def create_jogador(jogador: JogadorCriar, session: SessionDep):
 def read_jogador(jogador_id: int, session: SessionDep):
     jogador = session.get(Jogador, jogador_id)
     if not jogador:
-        raise HTTPException(status_code=404, detail="Jogador nao encontrado")
+        raise EXCEPTIONS.not_found("Jogador nao encontrado")
+    
     return jogador
 
 @router.get("/", response_model=list[JogadorPublico])
@@ -48,11 +49,14 @@ def get_jogadores(session : SessionDep):
 @router.put("/{jogador_id}", response_model=JogadorPublico)
 def update_jogador(jogador_id: int, jogador: JogadorUpdate, session: SessionDep):
     existing_jogador = session.get(Jogador, jogador_id)
+    
     if not existing_jogador:
-        raise HTTPException(status_code=404, detail="Jogador nao encontrado")
+        raise EXCEPTIONS.not_found("Jogador nao encontrado")
+    
     if jogador.senha:
         existing_jogador.usuario.set_senha(jogador.senha)
         session.add(existing_jogador.usuario)
+        
     jogador_data = jogador.model_dump(exclude_unset=True, exclude={"senha"})
     existing_jogador.sqlmodel_update(jogador_data)
     session.add(existing_jogador)
