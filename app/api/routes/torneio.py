@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, Depends
 from sqlmodel import text, select
 from sqlalchemy.orm import selectinload
 from typing import Annotated
-from app.services.TorneioService import importar_torneio, retornar_torneio_completo
+from app.utils.TorneioUtil import importar_torneio, retornar_torneio_completo
 
 from app.models.Torneio import Torneio, TorneioPublico
 from app.core.db import SessionDep

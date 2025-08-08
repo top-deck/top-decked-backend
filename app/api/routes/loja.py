@@ -4,7 +4,7 @@ from app.core.exception import TopDeckedException
 from app.models.Loja import LojaCriar, LojaPublico, LojaAtualizar, Loja
 from app.models.Usuario import Usuario
 from sqlmodel import select
-from app.services.UsuarioService import verificar_novo_usuario
+from app.utils.UsuarioUtil import verificar_novo_usuario
 
 
 router = APIRouter(

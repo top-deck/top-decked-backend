@@ -4,7 +4,7 @@ from app.models.Jogador import Jogador, JogadorPublico, JogadorUpdate, JogadorCr
 from app.core.db import SessionDep
 from app.core.exception import TopDeckedException
 from app.models.Usuario import Usuario
-from app.services.UsuarioService import verificar_novo_usuario
+from app.utils.UsuarioUtil import verificar_novo_usuario
 
 
 router = APIRouter(
