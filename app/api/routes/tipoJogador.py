@@ -1,7 +1,7 @@
 from app.core.db import SessionDep
 from app.models.TipoJogador import TipoJogador
 from fastapi import APIRouter, Depends
-from app.core.exception import EXCEPTIONS
+from app.core.exception import TopDeckedException
 from typing import Annotated
 from app.core.security import TokenData
 from app.dependencies import retornar_loja_atual
@@ -34,7 +34,7 @@ def get_tipos_jogador(session: SessionDep, loja: Annotated[TokenData, Depends(re
     )).all()
     
     if not tipos:
-        raise EXCEPTIONS.not_found("Nenhum tipo de jogador encontrado.")
+        raise TopDeckedException.not_found("Nenhum tipo de jogador encontrado.")
     return tipos
 
 @router.get("/{tipo_id}", response_model=TipoJogadorPublico)
@@ -49,7 +49,7 @@ def get_tipo_jogador_por_id(
     )).first()
 
     if not tipo:
-        raise EXCEPTIONS.not_found("Tipo de jogador não encontrado.")
+        raise TopDeckedException.not_found("Tipo de jogador não encontrado.")
 
     return tipo
 
@@ -65,7 +65,7 @@ def delete_tipo_jogador(
     )).first()
 
     if not tipo:
-        raise EXCEPTIONS.not_found("Tipo de jogador não encontrado.")
+        raise TopDeckedException.not_found("Tipo de jogador não encontrado.")
 
     session.delete(tipo)
     session.commit()

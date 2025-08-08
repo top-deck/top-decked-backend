@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from sqlmodel import select
 from app.models.Jogador import Jogador, JogadorPublico, JogadorUpdate, JogadorCriar
 from app.core.db import SessionDep
-from app.core.exception import EXCEPTIONS
+from app.core.exception import TopDeckedException
 from app.models.Usuario import Usuario
 from app.services.UsuarioService import verificar_novo_usuario
 
@@ -38,7 +38,7 @@ def create_jogador(jogador: JogadorCriar, session: SessionDep):
 def read_jogador(jogador_id: int, session: SessionDep):
     jogador = session.get(Jogador, jogador_id)
     if not jogador:
-        raise EXCEPTIONS.not_found("Jogador nao encontrado")
+        raise TopDeckedException.not_found("Jogador nao encontrado")
     
     return jogador
 
@@ -51,7 +51,7 @@ def update_jogador(jogador_id: int, jogador: JogadorUpdate, session: SessionDep)
     existing_jogador = session.get(Jogador, jogador_id)
     
     if not existing_jogador:
-        raise EXCEPTIONS.not_found("Jogador nao encontrado")
+        raise TopDeckedException.not_found("Jogador nao encontrado")
     
     if jogador.senha:
         existing_jogador.usuario.set_senha(jogador.senha)

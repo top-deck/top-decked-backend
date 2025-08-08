@@ -10,14 +10,14 @@ from sqlmodel import select
 
 from app.models.Usuario import Usuario
 from app.core.db import SessionDep, get_session
-from app.core.exception import EXCEPTIONS
+from app.core.exception import TopDeckedException
 from fastapi.security import OAuth2PasswordBearer
 
 import os
 
 SECRET_KEY = os.getenv("SECURITY_SECRET_KEY")
 ALGORITHM = os.getenv("SECURITY_ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("SECURITY_TOKEN_EXPIRATION")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("SECURITY_TOKEN_EXPIRATION"))
 
 OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl="login/token")
 PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -52,8 +52,8 @@ def retornar_usuario_pelo_email(email: str, session: SessionDep) -> Usuario | No
 
 def autenticar(email: str, forms_senha: str, session: SessionDep) -> Usuario | None:
     db_user = retornar_usuario_pelo_email(session=session, email=email)
-    if not db_user or verificar_senha(forms_senha, db_user.senha):
-        raise EXCEPTIONS.unauthorized()
+    if not db_user or not verificar_senha(forms_senha, db_user.senha):
+        raise TopDeckedException.unauthorized()
     return db_user
 
 

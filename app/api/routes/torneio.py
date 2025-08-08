@@ -6,7 +6,7 @@ from app.services.TorneioService import importar_torneio
 from app.models.Torneio import Torneio
 from app.core.db import SessionDep
 from app.core.security import TokenData
-from dependencies import retornar_loja_atual
+from app.dependencies import retornar_loja_atual
 
 router = APIRouter(
     prefix="/lojas/torneios",
