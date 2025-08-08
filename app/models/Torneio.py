@@ -1,9 +1,9 @@
 from sqlmodel import Field, SQLModel, Relationship
-from typing import Optional
+from typing import Optional, List, Dict
 from datetime import date
 from app.models.Loja import Loja
+from app.models.TipoJogador import TipoJogador
 from app.models.Jogador import JogadorPublicoLoja
-
 
 class TorneioBase(SQLModel):
     nome: str = Field(default=None)
@@ -21,5 +21,10 @@ class Torneio(TorneioBase, table=True):
     loja: Optional[Loja] = Relationship(sa_relationship_kwargs={"lazy": "joined"})
     
 
+class TorneioAtualizar(TorneioBase):
+    regra_basica: int
+    regras_adicionais: Optional[Dict[str, int]]
+
 class TorneioPublico(TorneioBase):
+    id: str
     jogadores: list["JogadorPublicoLoja"]

@@ -1,12 +1,13 @@
+from sqlalchemy.exc import NoResultFound
 from fastapi import UploadFile
-from sqlmodel import select
+from sqlmodel import select, update
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
 from app.core.db import SessionDep
 from app.core.exception import TopDeckedException
-from app.models.Torneio import Torneio, TorneioPublico
-from app.models.Jogador import Jogador
+from app.models.Torneio import Torneio, TorneioPublico, TorneioAtualizar
+from app.models.Jogador import Jogador, JogadorPublicoLoja
 from app.models.JogadorTorneioRelacao import JogadorTorneioRelacao
 from app.models.Rodada import Rodada
 
@@ -161,11 +162,79 @@ def _importar_partidas(partidas: ET.Element, torneio_id: str, num_rodada: int, s
     return partidas_criadas
 
 
+# Refact
 def retornar_torneio_completo(session: SessionDep, torneio: Torneio):
-    jogadores = session.exec(select(Jogador)
-                             .join(JogadorTorneioRelacao, Jogador.pokemon_id == JogadorTorneioRelacao.jogador_id)
-                             .where(JogadorTorneioRelacao.torneio_id == torneio.id))
+    query = (
+        select(Jogador, JogadorTorneioRelacao.tipo_jogador_id)
+        .join(JogadorTorneioRelacao, Jogador.pokemon_id == JogadorTorneioRelacao.jogador_id)
+        .where(JogadorTorneioRelacao.torneio_id == torneio.id)
+    )
+    resultados = session.exec(query).all()
+
+    jogadores_publicos = []
+    for jogador, tipo_jogador_id in resultados:
+        jogador_dict = jogador.model_dump()
+        jogador_dict["tipo_jogador_id"] = tipo_jogador_id
+        jogador_publico = JogadorPublicoLoja(**jogador_dict)
+        jogadores_publicos.append(jogador_publico)
+
+    torneio_completo = TorneioPublico(
+        **torneio.model_dump(), jogadores=jogadores_publicos)
+
+    return torneio_completo
+
+# Refact
+def editar_torneio_regras(session: SessionDep, torneio: Torneio, torneio_atualizar: TorneioAtualizar) -> Torneio:
+    torneio.nome = torneio_atualizar.nome or torneio.nome
+    torneio.descricao = torneio_atualizar.descricao or torneio.descricao
+    torneio.cidade = torneio_atualizar.cidade or torneio.cidade
+    torneio.estado = torneio_atualizar.estado or torneio.estado
+    torneio.tempo_por_rodada = torneio_atualizar.tempo_por_rodada or torneio.tempo_por_rodada
+    torneio.data_inicio = torneio_atualizar.data_inicio or torneio.data_inicio
+    torneio.finalizado = torneio_atualizar.finalizado or torneio.finalizado
+
+    session.add(torneio)
+    session.commit()
+
+    if torneio_atualizar.regras_adicionais:
+        for jogador_id, tipo_jogador_id in torneio_atualizar.regras_adicionais.items():
+            stmt = (
+                update(JogadorTorneioRelacao)
+                .where(JogadorTorneioRelacao.jogador_id == jogador_id)
+                .where(JogadorTorneioRelacao.torneio_id == torneio.id)
+                .values(tipo_jogador_id=tipo_jogador_id)
+            )
+            result = session.exec(stmt)
+            if result.rowcount == 0:
+                nova_relacao = JogadorTorneioRelacao(
+                    jogador_id=jogador_id,
+                    torneio_id=torneio.id,
+                    tipo_jogador_id=tipo_jogador_id,
+                )
+                session.add(nova_relacao)
+
+    session.commit()
+
+    jogadores_no_torneio = session.exec(
+        select(JogadorTorneioRelacao).where(
+            JogadorTorneioRelacao.torneio_id == torneio.id)
+    ).all()
+
+    jogadores_com_regra_adicional = set(torneio_atualizar.regras_adicionais.keys(
+    )) if torneio_atualizar.regras_adicionais else set()
+
+    for relacao in jogadores_no_torneio:
+        if relacao.jogador_id not in jogadores_com_regra_adicional:
+            stmt = (
+                update(JogadorTorneioRelacao)
+                .where(JogadorTorneioRelacao.jogador_id == relacao.jogador_id)
+                .where(JogadorTorneioRelacao.torneio_id == torneio.id)
+                .values(tipo_jogador_id=torneio_atualizar.regra_basica)
+            )
+            session.exec(stmt)
+
+    session.commit()
+    session.refresh(torneio)
     
-    torneio_completo = TorneioPublico(**torneio.model_dump(), jogadores=jogadores)
-    
+    torneio_completo = retornar_torneio_completo(session, torneio)
     return torneio_completo

@@ -16,7 +16,7 @@ class JogadorPublico(JogadorBase):
 class JogadorPublicoLoja(JogadorBase):
     id: int
     pokemon_id: str | None
-
+    tipo_jogador_id: int | None
 
 class JogadorUpdate(JogadorBase):
     nome: str | None = None
