@@ -39,6 +39,7 @@ def _importar_metadados(xml: ET.Element, session: SessionDep, loja_id: int):
         raise TopDeckedException.bad_request("Bloco 'data' não encontrado no XML")
 
     id = dados.findtext("id")
+    nome = dados.findtext("name")
     cidade = dados.findtext("city")
     estado = dados.findtext("state")
     tempo_por_rodada = dados.findtext("roundtime", default="30")
@@ -51,8 +52,11 @@ def _importar_metadados(xml: ET.Element, session: SessionDep, loja_id: int):
         data_inicio = datetime.strptime(data_inicio_str, "%d/%m/%Y").date()
     except ValueError:
         raise TopDeckedException.bad_request("Data de início em formato inválido")
+    descricao = f"{nome} {data_inicio}"
 
     return Torneio(id=id,
+                   nome=nome,
+                   descricao=descricao,
                    cidade=cidade,
                    estado=estado,
                    tempo_por_rodada=tempo_por_rodada,

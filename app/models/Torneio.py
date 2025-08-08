@@ -6,6 +6,8 @@ from app.models.Jogador import JogadorPublicoLoja
 
 
 class TorneioBase(SQLModel):
+    nome: str = Field(default=None)
+    descricao: str = Field(default=None)
     cidade: str = Field(index=True)
     estado: Optional[str] = Field(default=None, index=True, nullable=True)
     tempo_por_rodada: int = Field(default=30, index=True)
