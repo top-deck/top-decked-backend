@@ -5,7 +5,7 @@ from datetime import datetime
 
 from app.core.db import SessionDep
 from app.core.exception import TopDeckedException
-from app.models.Torneio import Torneio
+from app.models.Torneio import Torneio, TorneioPublico
 from app.models.Jogador import Jogador
 from app.models.JogadorTorneioRelacao import JogadorTorneioRelacao
 from app.models.Rodada import Rodada
@@ -154,5 +154,14 @@ def _importar_partidas(partidas: ET.Element, torneio_id: str, num_rodada: int, s
         session.refresh(partida)
         partidas_criadas.append(partida)
         
-
     return partidas_criadas
+
+
+def retornar_torneio_completo(session: SessionDep, torneio: Torneio):
+    jogadores = session.exec(select(Jogador)
+                             .join(JogadorTorneioRelacao, Jogador.pokemon_id == JogadorTorneioRelacao.jogador_id)
+                             .where(JogadorTorneioRelacao.torneio_id == torneio.id))
+    
+    torneio_completo = TorneioPublico(**torneio.model_dump(), jogadores=jogadores)
+    
+    return torneio_completo

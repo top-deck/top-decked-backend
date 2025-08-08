@@ -1,9 +1,10 @@
 from fastapi import APIRouter, UploadFile, Depends
-from sqlmodel import text
+from sqlmodel import text, select
+from sqlalchemy.orm import selectinload
 from typing import Annotated
-from app.services.TorneioService import importar_torneio
+from app.services.TorneioService import importar_torneio, retornar_torneio_completo
 
-from app.models.Torneio import Torneio
+from app.models.Torneio import Torneio, TorneioPublico
 from app.core.db import SessionDep
 from app.core.security import TokenData
 from app.dependencies import retornar_loja_atual
@@ -13,13 +14,12 @@ router = APIRouter(
     tags=["Torneios"])
 
 
-@router.post("/importar", response_model=Torneio)
+@router.post("/importar", response_model=TorneioPublico)
 def importar_torneios(session: SessionDep, arquivo: UploadFile, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
     torneio = importar_torneio(session, arquivo, loja.id)
-    session.add(torneio)
-    session.commit()
-    session.refresh(torneio)
-    return torneio
+    
+    torneio_completo = retornar_torneio_completo(session, torneio)
+    return torneio_completo
 
 
 @router.delete("/", status_code=204)
