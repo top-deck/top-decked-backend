@@ -5,10 +5,7 @@ from datetime import datetime
 
 from app.core.db import SessionDep
 from app.core.exception import TopDeckedException
-from app.models.Torneio import Torneio, TorneioPublico
-from app.models.Jogador import Jogador
-from app.models.JogadorTorneioRelacao import JogadorTorneioRelacao
-from app.models.Rodada import Rodada
+from app.models import Rodada, Torneio, Jogador, JogadorTorneioLink
 
 
 def importar_torneio(session: SessionDep, arquivo: UploadFile, loja_id: int):
@@ -96,7 +93,7 @@ def _importar_jogadores(xml: ET.Element, session: SessionDep):
     return jogadores
 
 def _criar_relacao_jogador_torneio(jogador_id: int, torneio_id: str, session: SessionDep):
-    participacao = JogadorTorneioRelacao(
+    participacao = JogadorTorneioLink(
                     jogador_id=jogador_id,
                     torneio_id=torneio_id
                 )
@@ -161,11 +158,27 @@ def _importar_partidas(partidas: ET.Element, torneio_id: str, num_rodada: int, s
     return partidas_criadas
 
 
-def retornar_torneio_completo(session: SessionDep, torneio: Torneio):
-    jogadores = session.exec(select(Jogador)
-                             .join(JogadorTorneioRelacao, Jogador.pokemon_id == JogadorTorneioRelacao.jogador_id)
-                             .where(JogadorTorneioRelacao.torneio_id == torneio.id))
+def retornar_torneio_completo(torneio: Torneio):
+    torneio_dict = torneio.model_dump()
     
-    torneio_completo = TorneioPublico(**torneio.model_dump(), jogadores=jogadores)
+    torneio_dict["jogadores"] = [
+        {
+            "tipo_jogador_id": link.tipo_jogador_id,
+            "jogador_id": link.jogador_id,
+            "nome": link.jogador.nome
+        }
+        for link in torneio.jogadores
+    ]
     
-    return torneio_completo
+    return torneio_dict
+
+def editar_torneio_regras(torneio: Torneio, regra_basica: int, regras_adicionais: dict) -> Torneio:
+    for jogador in torneio.jogadores:
+        jogador_id = jogador.jogador_id
+        
+        if jogador_id in regras_adicionais:
+            jogador.tipo_jogador_id = regras_adicionais[jogador_id]
+        else:
+            jogador.tipo_jogador_id = regra_basica
+    
+    return torneio

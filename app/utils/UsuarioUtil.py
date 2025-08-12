@@ -1,9 +1,7 @@
 from app.core.db import SessionDep
 from email_validator import validate_email, EmailNotValidError
 from app.core.exception import TopDeckedException
-from app.models.Usuario import Usuario
-from app.models.Jogador import Jogador
-from app.models.Loja import Loja
+from app.models import Usuario, Jogador, Loja
 from sqlmodel import select
 from sqlalchemy import func
 from app.core.security import OAUTH2_SCHEME
@@ -14,11 +12,11 @@ def verificar_novo_usuario(email: str, session: SessionDep) -> str:
         num_usuarios = session.scalar(select(func.count(Usuario.id)).where(Usuario.email == email))
 
         if num_usuarios > 0:
-            raise TopDeckedException.bad_request("e-mail já cadastrado: '{email}'")
+            raise TopDeckedException.bad_request(f"email cadastrado: '{email}'")
         
         return valid.normalized
     except EmailNotValidError:
-        raise TopDeckedException.bad_request("e-mail inválido: '{email}'")
+        raise TopDeckedException.bad_request(f"e-mail inválido: '{email}'")
 
 
 def retornar_info_por_usuario(usuario: Usuario, session: SessionDep) -> dict:

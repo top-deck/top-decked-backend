@@ -1,8 +1,9 @@
 from fastapi import APIRouter
 from app.core.db import SessionDep
 from app.core.exception import TopDeckedException
-from app.models.Loja import LojaCriar, LojaPublico, LojaAtualizar, Loja
-from app.models.Usuario import Usuario
+from app.schemas.Loja import LojaCriar, LojaPublico, LojaAtualizar
+from app.models import Loja
+from app.models import Usuario
 from sqlmodel import select
 from app.utils.UsuarioUtil import verificar_novo_usuario
 

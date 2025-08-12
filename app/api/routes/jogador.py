@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 from sqlmodel import select
-from app.models.Jogador import Jogador, JogadorPublico, JogadorUpdate, JogadorCriar
+from app.schemas.Jogador import JogadorPublico, JogadorUpdate, JogadorCriar
 from app.core.db import SessionDep
 from app.core.exception import TopDeckedException
-from app.models.Usuario import Usuario
+from app.models import Usuario, Jogador
 from app.utils.UsuarioUtil import verificar_novo_usuario
 
 
