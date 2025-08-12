@@ -163,17 +163,20 @@ def retornar_torneio_completo(torneio: Torneio):
     
     torneio_dict["jogadores"] = [
         {
-            "tipo_jogador_id": link.tipo_jogador_id,
             "jogador_id": link.jogador_id,
-            "nome": link.jogador.nome
+            "nome": link.jogador.nome,
+            "tipo_jogador_id": link.tipo_jogador_id,
+            "pontuacao": link.pontuacao
         }
         for link in torneio.jogadores
     ]
     
     return torneio_dict
 
+
 def editar_torneio_regras(torneio: Torneio, regra_basica: int, regras_adicionais: dict) -> Torneio:
     for jogador in torneio.jogadores:
+        jogador.pontuacao = 0
         jogador_id = jogador.jogador_id
         
         if jogador_id in regras_adicionais:
@@ -182,3 +185,47 @@ def editar_torneio_regras(torneio: Torneio, regra_basica: int, regras_adicionais
             jogador.tipo_jogador_id = regra_basica
     
     return torneio
+
+
+def calcular_pontuacao(session: SessionDep, torneio: Torneio):
+    for rodada in torneio.rodadas:
+        jogador1_id = rodada.jogador1_id
+        jogador2_id = rodada.jogador2_id
+        jogador1_link = session.get(JogadorTorneioLink, {"torneio_id": torneio.id,
+                                                          "jogador_id": jogador1_id})
+        jogador2_link = session.get(JogadorTorneioLink, {"torneio_id": torneio.id,
+                                                          "jogador_id": jogador2_id})
+        jogador1_tipo = jogador1_link.tipo_jogador
+        jogador2_tipo = jogador2_link.tipo_jogador
+
+        if rodada.vencedor == jogador1_id:
+            # Jogador 1 ganha os pontos por vitória 
+            # e os pontos da regra de derrota do oponente
+            jogador1_link.pontuacao += (jogador1_tipo.pt_vitoria 
+                                        + jogador2_tipo.pt_oponente_ganha)
+            # Jogador 2 ganha os pontos por derrota 
+            # e os pontos da regra de vitória do oponente (possivelmente negativos)
+            jogador2_link.pontuacao += (jogador2_tipo.pt_derrota 
+                                        + jogador1_tipo.pt_oponente_perde)
+        
+        elif rodada.vencedor == jogador2_id:
+            # Jogador 2 ganha os pontos por vitória
+            # e os pontos da regra de derrota do oponente
+            jogador2_link.pontuacao += (jogador2_tipo.pt_vitoria 
+                                        + jogador1_tipo.pt_oponente_ganha)
+            # Jogador 1 ganha os pontos por derrota
+            # e os pontos da regra de vitória do oponente (possivelmente negativos)
+            jogador1_link.pontuacao += (jogador1_tipo.pt_derrota 
+                                        + jogador2_tipo.pt_oponente_perde)
+        else:
+            # Jogador 1 ganha os pontos por empate
+            # e os pontos da regra de empate do oponente
+            jogador1_link.pontuacao += (jogador1_tipo.pt_empate
+                                        + jogador2_tipo.pt_oponente_empate)
+            # Jogador 1 ganha os pontos por empate
+            # e os pontos da regra de empate do oponente
+            jogador1_link.pontuacao += (jogador2_tipo.pt_empate 
+                                        + jogador1_tipo.pt_oponente_empate)
+            
+        session.add(jogador1_link)
+        session.add(jogador2_link)
