@@ -12,11 +12,11 @@ def verificar_novo_usuario(email: str, session: SessionDep) -> str:
         num_usuarios = session.scalar(select(func.count(Usuario.id)).where(Usuario.email == email))
 
         if num_usuarios > 0:
-            raise TopDeckedException.bad_request("e-mail já cadastrado: '{email}'")
+            raise TopDeckedException.bad_request(f"email cadastrado: '{email}'")
         
         return valid.normalized
     except EmailNotValidError:
-        raise TopDeckedException.bad_request("e-mail inválido: '{email}'")
+        raise TopDeckedException.bad_request(f"e-mail inválido: '{email}'")
 
 
 def retornar_info_por_usuario(usuario: Usuario, session: SessionDep) -> dict:
