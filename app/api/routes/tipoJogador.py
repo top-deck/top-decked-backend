@@ -1,11 +1,11 @@
 from app.core.db import SessionDep
-from app.models.TipoJogador import TipoJogador
 from fastapi import APIRouter, Depends
 from app.core.exception import TopDeckedException
 from typing import Annotated
 from app.core.security import TokenData
 from app.dependencies import retornar_loja_atual
-from app.models.TipoJogador import TipoJogadorBase, TipoJogador, TipoJogadorPublico
+from app.schemas.TipoJogador import TipoJogadorPublico
+from app.models import TipoJogador, TipoJogadorBase
 from sqlmodel import select
 
 

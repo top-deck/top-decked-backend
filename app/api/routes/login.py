@@ -10,7 +10,7 @@ from typing import Annotated
 
 from app.utils.UsuarioUtil import retornar_info_por_usuario
 from app.core.db import SessionDep
-from app.models.Usuario import Usuario
+
 
 router = APIRouter(
     prefix="/login",

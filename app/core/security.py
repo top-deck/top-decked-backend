@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from sqlmodel import select
 
-from app.models.Usuario import Usuario
+from app.models import Usuario
 from app.core.db import SessionDep, get_session
 from app.core.exception import TopDeckedException
 from fastapi.security import OAuth2PasswordBearer

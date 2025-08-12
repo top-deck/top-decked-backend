@@ -1,9 +1,7 @@
 from app.core.db import SessionDep
 from email_validator import validate_email, EmailNotValidError
 from app.core.exception import TopDeckedException
-from app.models.Usuario import Usuario
-from app.models.Jogador import Jogador
-from app.models.Loja import Loja
+from app.models import Usuario, Jogador, Loja
 from sqlmodel import select
 from sqlalchemy import func
 from app.core.security import OAUTH2_SCHEME
