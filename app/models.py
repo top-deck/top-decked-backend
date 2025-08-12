@@ -1,6 +1,6 @@
 from sqlmodel import Field, SQLModel, Relationship
 from typing import List, Optional
-from datetime import date
+from datetime import date, time
 from passlib.hash import bcrypt
 
 
@@ -87,11 +87,18 @@ class TipoJogador(TipoJogadorBase, table=True):
 class TorneioBase(SQLModel):
     nome: str = Field(default=None)
     descricao: str = Field(default=None)
-    cidade: str = Field(index=True)
+    cidade: Optional[str] = Field(default=None, index=True)
     estado: Optional[str] = Field(default=None, index=True, nullable=True)
     tempo_por_rodada: int = Field(default=30, index=True)
     data_inicio: date = Field(default=None)
-    finalizado: bool = Field(default=False)
+    finalizado: Optional[bool] = Field(default=False)
+    vagas: int = Field(default=0)
+    hora: Optional[time] = Field(default=None)
+    formato: str = Field(default=None)
+    taxa: float = Field(default=0)
+    premio: Optional[str] = Field(default=None)
+    n_rodadadas: int = Field(default=0)
+
 
 
 class Torneio(TorneioBase, table=True):

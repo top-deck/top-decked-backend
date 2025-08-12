@@ -1,10 +1,9 @@
 from fastapi import APIRouter, UploadFile, Depends
-from sqlmodel import text, select
-from sqlalchemy.orm import selectinload
+from sqlmodel import text
 from typing import Annotated
 from app.utils.TorneioUtil import importar_torneio, retornar_torneio_completo, editar_torneio_regras
 from app.schemas.Torneio import TorneioPublico, TorneioAtualizar
-from app.models import Torneio
+from app.models import Torneio, TorneioBase
 from app.core.db import SessionDep
 from app.core.exception import TopDeckedException
 from app.core.security import TokenData
@@ -58,3 +57,14 @@ def deletar_torneios(session: SessionDep, loja: Annotated[TokenData, Depends(ret
     session.exec(text("DELETE FROM jogadortorneiolink"))
     session.exec(text("DELETE FROM torneio"))
     session.commit()
+
+@router.post("/criar",response_model=TorneioPublico)
+def criar_torneio(session:SessionDep, torneio: TorneioBase, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
+    novo_torneio = Torneio(
+        **torneio.model_dump(),
+        loja_id = loja.id,
+    )
+    session.add(novo_torneio)
+    session.commit()
+    session.refresh(novo_torneio)
+    return novo_torneio
