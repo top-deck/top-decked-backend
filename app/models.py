@@ -71,10 +71,12 @@ class Rodada(SQLModel, table=True):
 # ---------------------------------- TipoJogador ----------------------------------
 class TipoJogadorBase(SQLModel):
     nome: str = Field(default=None)
-    pt_vitoria: int = Field(default=None)
-    pt_derrota: int = Field(default=None)
-    pt_oponente_perde: int = Field(default=None)
-    pt_oponente_ganha: int = Field(default=None)
+    pt_vitoria: float = Field(default=None)
+    pt_derrota: float = Field(default=None)
+    pt_empates: float = Field(default=None)
+    pt_oponente_perde: float = Field(default=None)
+    pt_oponente_ganha: float = Field(default=None)
+    pt_oponente_empate: float = Field(default=None)
     tcg: str = Field(default=None)
 
 
@@ -93,10 +95,10 @@ class TorneioBase(SQLModel):
     data_inicio: date = Field(default=None)
     finalizado: Optional[bool] = Field(default=False)
     vagas: int = Field(default=0)
-    hora: Optional[time] = Field(default=None)
-    formato: str = Field(default=None)
+    hora: Optional[time] = Field(default=None, nullable=True)
+    formato: Optional[str] = Field(default=None, nullable=True)
     taxa: float = Field(default=0)
-    premio: Optional[str] = Field(default=None)
+    premio: Optional[str] = Field(default=None, nullable=True)
     n_rodadadas: int = Field(default=0)
 
 
