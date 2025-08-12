@@ -20,7 +20,7 @@ def importar_torneios(session: SessionDep, arquivo: UploadFile, loja: Annotated[
     torneio = importar_torneio(session, arquivo, loja.id)
     session.refresh(torneio)
 
-    torneio_completo = retornar_torneio_completo(session, torneio)
+    torneio_completo = retornar_torneio_completo(torneio)
     return torneio_completo
 
 
@@ -29,14 +29,27 @@ def editar_torneio(session: SessionDep,
                    torneio_id: str, 
                    torneio_atualizar: TorneioAtualizar, 
                    loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
-    torneio = session.exec(select(Torneio).where(Torneio.id == torneio_id)).first()
+    torneio = session.get(Torneio, torneio_id)
     
     if not torneio:
         TopDeckedException.not_found("Torneio não existe")
     if not torneio.loja_id == loja.id:
-        TopDeckedException.forbidden
-
-    return editar_torneio_regras(session, torneio, torneio_atualizar)
+        TopDeckedException.forbidden()
+        
+    dados_para_atualizar = torneio_atualizar.model_dump(
+            exclude={"regra_basica", "regras_adicionais"}, exclude_unset=True)
+    
+    torneio.sqlmodel_update(dados_para_atualizar)
+    
+    torneio_atualizado = editar_torneio_regras(torneio, 
+                                               torneio_atualizar.regra_basica, 
+                                               torneio_atualizar.regras_adicionais)
+    
+    session.add(torneio_atualizado)
+    session.commit()
+    session.refresh(torneio_atualizado)
+    
+    return retornar_torneio_completo(torneio_atualizado)
 
 
 @router.delete("/", status_code=204)
