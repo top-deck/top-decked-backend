@@ -8,14 +8,16 @@ from app.core.exception import TopDeckedException
 from app.models import Rodada, Torneio, Jogador, JogadorTorneioLink
 
 
-def importar_torneio(session: SessionDep, arquivo: UploadFile, loja_id: int):
+def importar_torneio(session: SessionDep, arquivo: UploadFile, loja_id: int, torneio: Torneio = None):
     dados = arquivo.file.read()
     try:
         xml = ET.fromstring(dados)
     except ET.ParseError:
         raise TopDeckedException.bad_request("Arquivo XML inválido")
-
-    torneio = _importar_metadados(xml, session, loja_id)
+    
+    if torneio:
+        session.delete(torneio)
+    torneio = _importar_metadados(xml, loja_id)
     session.add(torneio)
     session.commit()
     session.refresh(torneio)
@@ -30,7 +32,7 @@ def importar_torneio(session: SessionDep, arquivo: UploadFile, loja_id: int):
     return torneio
 
 
-def _importar_metadados(xml: ET.Element, session: SessionDep, loja_id: int):
+def _importar_metadados(xml: ET.Element, loja_id: int):
     dados = xml.find("data")
     if dados is None:
         raise TopDeckedException.bad_request("Bloco 'data' não encontrado no XML")

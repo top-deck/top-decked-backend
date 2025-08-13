@@ -26,5 +26,5 @@ class TorneioAtualizar(TorneioBase):
 
 class TorneioPublico(TorneioBase):
     id: str
-    jogadores: List["JogadorTorneioLinkPublico"]
-    rodadas: List["RodadaBase"]
+    jogadores: List["JogadorTorneioLinkPublico"] | None
+    rodadas: List["RodadaBase"] | None

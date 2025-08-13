@@ -23,6 +23,22 @@ def importar_torneios(session: SessionDep, arquivo: UploadFile, loja: Annotated[
     return torneio_completo
 
 
+@router.post("/{torneio_id}/importar", response_model=TorneioPublico)
+def importar_torneios(session: SessionDep, arquivo: UploadFile, torneio_id: str, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
+    torneio = session.get(Torneio, torneio_id)
+
+    if not torneio:
+        raise TopDeckedException.not_found("Torneio não existe")
+    if not torneio.loja_id == loja.id:
+        raise TopDeckedException.forbidden()
+        
+    torneio = importar_torneio(session, arquivo, loja.id, torneio)
+    session.refresh(torneio)
+
+    torneio_completo = retornar_torneio_completo(torneio)
+    return torneio_completo
+
+
 @router.put("/{torneio_id}", response_model=TorneioPublico)
 def editar_torneio(session: SessionDep, 
                    torneio_id: str, 

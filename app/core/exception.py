@@ -10,14 +10,14 @@ class TopDeckedException:
     @staticmethod
     def forbidden():
         return HTTPException(
-            status_code=401,
+            status_code=403,
             detail="Autenticação negada",
             headers={"WWW-Authenticate": "Bearer"})
 
     @staticmethod
     def unauthorized():
         return HTTPException(
-            status_code=403,
+            status_code=401,
             detail="Permissão negada",
             headers={"WWW-Authenticate": "Bearer"})
 
