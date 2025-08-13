@@ -2,6 +2,7 @@ from sqlmodel import Field, SQLModel, Relationship
 from typing import List, Optional
 from datetime import date, time
 from passlib.hash import bcrypt
+import uuid
 
 
 # ---------------------------------- Usuario ----------------------------------
@@ -95,7 +96,7 @@ class TipoJogador(TipoJogadorBase, table=True):
 class TorneioBase(SQLModel):
     nome: Optional[str] = Field(default=None, nullable=True)
     descricao: Optional[str] = Field(default=None, nullable=True)
-    cidade: Optional[str] = Field(default=None, index=True)
+    cidade: Optional[str] = Field(default=None, index=True, nullable=True)
     estado: Optional[str] = Field(default=None, index=True, nullable=True)
     tempo_por_rodada: int = Field(default=30, index=True)
     data_inicio: date = Field(default=None)
@@ -112,7 +113,7 @@ class TorneioBase(SQLModel):
 
 
 class Torneio(TorneioBase, table=True):
-    id: Optional[str] = Field(default=None, primary_key=True)
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     loja_id: int = Field(foreign_key="loja.id", nullable=True)
     loja: Optional["Loja"] = Relationship(sa_relationship_kwargs={"lazy": "joined"})
     rodadas: List["Rodada"] = Relationship()

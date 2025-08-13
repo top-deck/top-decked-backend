@@ -8,14 +8,16 @@ from app.core.exception import TopDeckedException
 from app.models import Rodada, Torneio, Jogador, JogadorTorneioLink
 
 
-def importar_torneio(session: SessionDep, arquivo: UploadFile, loja_id: int):
+def importar_torneio(session: SessionDep, arquivo: UploadFile, loja_id: int, torneio: Torneio = None):
     dados = arquivo.file.read()
     try:
         xml = ET.fromstring(dados)
     except ET.ParseError:
         raise TopDeckedException.bad_request("Arquivo XML inválido")
-
-    torneio = _importar_metadados(xml, session, loja_id)
+    
+    if not torneio:
+        torneio = Torneio()
+    torneio = _importar_metadados(xml, loja_id, torneio)
     session.add(torneio)
     session.commit()
     session.refresh(torneio)
@@ -30,36 +32,32 @@ def importar_torneio(session: SessionDep, arquivo: UploadFile, loja_id: int):
     return torneio
 
 
-def _importar_metadados(xml: ET.Element, session: SessionDep, loja_id: int):
+def _importar_metadados(xml: ET.Element, loja_id: int, torneio: Torneio):
     dados = xml.find("data")
     if dados is None:
         raise TopDeckedException.bad_request("Bloco 'data' não encontrado no XML")
 
-    id = dados.findtext("id")
-    nome = dados.findtext("name")
-    cidade = dados.findtext("city")
-    estado = dados.findtext("state")
-    tempo_por_rodada = dados.findtext("roundtime", default="30")
-    data_inicio_str = dados.findtext("startdate")
+    if not torneio.id:
+        torneio.id = dados.findtext("id")
+    torneio.nome = dados.findtext("name")
+    torneio.estado = dados.findtext("state")
+    torneio.tempo_por_rodada = dados.findtext("roundtime", default="30")
     
+    cidade = dados.findtext("city")
+    data_inicio_str = dados.findtext("startdate")
     if not cidade or not data_inicio_str:
         raise TopDeckedException.bad_request("Cidade ou data de início ausentes")
 
+    torneio.cidade = cidade
     try:
-        data_inicio = datetime.strptime(data_inicio_str, "%d/%m/%Y").date()
+        torneio.data_inicio = datetime.strptime(
+            data_inicio_str, "%d/%m/%Y").date()
     except ValueError:
         raise TopDeckedException.bad_request("Data de início em formato inválido")
-    descricao = f"{nome} {data_inicio}"
-
-    return Torneio(id=id,
-                   nome=nome,
-                   descricao=descricao,
-                   cidade=cidade,
-                   estado=estado,
-                   tempo_por_rodada=tempo_por_rodada,
-                   data_inicio=data_inicio,
-                   loja_id=loja_id,
-                   finalizado=True)
+    
+    torneio.descricao = f"{torneio.nome} {torneio.data_inicio}"
+    torneio.loja_id = loja_id
+    return torneio
 
 def _importar_jogadores(xml: ET.Element, session: SessionDep):
     jogadores = []
