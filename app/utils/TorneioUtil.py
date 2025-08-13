@@ -265,7 +265,7 @@ def calcular_pontuacao(session: SessionDep, torneio: Torneio):
             jogador2_link.pontuacao_com_regras += (regra_basica.pt_empate
                                                    + regra_basica.pt_oponente_empate)
             
-        jogador1_link.pontuacao_com_regras += torneio.pontuacao_de_participacao
-        jogador2_link.pontuacao_com_regras += torneio.pontuacao_de_participacao
-        session.add(jogador1_link)
-        session.add(jogador2_link)
+    jogador1_link.pontuacao_com_regras += torneio.pontuacao_de_participacao
+    jogador2_link.pontuacao_com_regras += torneio.pontuacao_de_participacao
+    session.add(jogador1_link)
+    session.add(jogador2_link)
