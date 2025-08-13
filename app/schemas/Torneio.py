@@ -18,7 +18,8 @@ class TorneioAtualizar(TorneioBase):
     taxa: float | None = None
     premio: str | None = None
     n_rodadadas: int | None = None
-
+    pontuacao_de_participacao: int | None = None
+    
     regra_basica_id: int | None = None
     regras_adicionais: Optional[Dict[str, int]] | None = None
 

@@ -93,8 +93,8 @@ class TipoJogador(TipoJogadorBase, table=True):
 
 # ---------------------------------- Torneio ----------------------------------
 class TorneioBase(SQLModel):
-    nome: str = Field(default=None)
-    descricao: str = Field(default=None)
+    nome: Optional[str] = Field(default=None, nullable=True)
+    descricao: Optional[str] = Field(default=None, nullable=True)
     cidade: Optional[str] = Field(default=None, index=True)
     estado: Optional[str] = Field(default=None, index=True, nullable=True)
     tempo_por_rodada: int = Field(default=30, index=True)
@@ -108,7 +108,7 @@ class TorneioBase(SQLModel):
     n_rodadadas: int = Field(default=0)
     regra_basica_id: Optional[int] = Field(
         default=None, foreign_key="tipojogador.id", nullable=True)
-
+    pontuacao_de_participacao: int = Field(default=0)
 
 
 class Torneio(TorneioBase, table=True):
