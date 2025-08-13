@@ -1,10 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from sqlmodel import select
 from app.schemas.Jogador import JogadorPublico, JogadorUpdate, JogadorCriar
 from app.core.db import SessionDep
 from app.core.exception import TopDeckedException
+from app.core.security import TokenData
 from app.models import Usuario, Jogador
 from app.utils.UsuarioUtil import verificar_novo_usuario
+from app.dependencies import retornar_jogador_atual
+from typing import Annotated
 
 
 router = APIRouter(
@@ -56,10 +59,36 @@ def update_jogador(jogador_id: int, jogador: JogadorUpdate, session: SessionDep)
     if jogador.senha:
         existing_jogador.usuario.set_senha(jogador.senha)
         session.add(existing_jogador.usuario)
+    
+    if jogador.pokemon_id:
+        jogador_db = session.exec(select(Jogador)
+                                  .where(Jogador.pokemon_id == jogador.pokemon_id)).first()
         
+        if jogador_db:
+            jogador_db.nome = existing_jogador.nome
+            jogador_db.usuario_id = existing_jogador.usuario_id
+            session.delete(existing_jogador)
+            existing_jogador = jogador_db
+    
     jogador_data = jogador.model_dump(exclude_unset=True, exclude={"senha"})
     existing_jogador.sqlmodel_update(jogador_data)
     session.add(existing_jogador)
     session.commit()
     session.refresh(existing_jogador)
     return existing_jogador
+
+
+@router.delete("/{jogador_id}", status_code=204)
+def delete_usuario(session: SessionDep,
+                   jogador_id,
+                   jogador_token: Annotated[TokenData, Depends(retornar_jogador_atual)]):
+    jogador = session.get(Jogador, jogador_id)
+
+    if not jogador:
+        raise TopDeckedException.not_found("Jogador não encontrado")
+
+    if jogador_token.usuario_id != jogador.usuario_id:
+        raise TopDeckedException.forbidden()
+
+    session.delete(jogador)
+    session.commit()
