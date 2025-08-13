@@ -60,10 +60,8 @@ class Loja(LojaBase, table=True):
 
 # ---------------------------------- Rodada ----------------------------------
 class RodadaBase(SQLModel):
-    jogador1_id: str = Field(primary_key=True,
-            default=None, foreign_key="jogador.pokemon_id")
-    jogador2_id: str = Field(
-        primary_key=True, default=None, foreign_key="jogador.pokemon_id")
+    jogador1_id: str = Field(default=None, foreign_key="jogador.pokemon_id")
+    jogador2_id: str = Field(default=None, foreign_key="jogador.pokemon_id")
     vencedor: Optional[str] = Field(
         default=None, foreign_key="jogador.pokemon_id", nullable=True)
     num_rodada: int = Field(default=None)
@@ -71,8 +69,8 @@ class RodadaBase(SQLModel):
     data_de_inicio: date = Field(default=None)
 
 class Rodada(RodadaBase, table=True):
-    torneio_id: str = Field(
-        primary_key=True, default=None, foreign_key="torneio.id")
+    id: int | None = Field(default=None, primary_key=True)
+    torneio_id: str = Field(default=None, foreign_key="torneio.id", ondelete="CASCADE")
 
 
 # ---------------------------------- TipoJogador ----------------------------------
@@ -116,6 +114,6 @@ class Torneio(TorneioBase, table=True):
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     loja_id: int = Field(foreign_key="loja.id", nullable=True)
     loja: Optional["Loja"] = Relationship(sa_relationship_kwargs={"lazy": "joined"})
-    rodadas: List["Rodada"] = Relationship()
-    jogadores: List["JogadorTorneioLink"] = Relationship()
+    rodadas: List["Rodada"] = Relationship(sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    jogadores: List["JogadorTorneioLink"] = Relationship(sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     regra_basica: Optional["TipoJogador"] = Relationship()

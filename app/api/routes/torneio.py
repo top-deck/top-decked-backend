@@ -28,9 +28,9 @@ def importar_torneios(session: SessionDep, arquivo: UploadFile, torneio_id: str,
     torneio = session.get(Torneio, torneio_id)
 
     if not torneio:
-        TopDeckedException.not_found("Torneio não existe")
+        raise TopDeckedException.not_found("Torneio não existe")
     if not torneio.loja_id == loja.id:
-        TopDeckedException.forbidden()
+        raise TopDeckedException.forbidden()
         
     torneio = importar_torneio(session, arquivo, loja.id, torneio)
     session.refresh(torneio)

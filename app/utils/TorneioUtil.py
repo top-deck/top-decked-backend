@@ -15,9 +15,9 @@ def importar_torneio(session: SessionDep, arquivo: UploadFile, loja_id: int, tor
     except ET.ParseError:
         raise TopDeckedException.bad_request("Arquivo XML inválido")
     
-    if not torneio:
-        torneio = Torneio()
-    torneio = _importar_metadados(xml, loja_id, torneio)
+    if torneio:
+        session.delete(torneio)
+    torneio = _importar_metadados(xml, loja_id)
     session.add(torneio)
     session.commit()
     session.refresh(torneio)
@@ -32,32 +32,36 @@ def importar_torneio(session: SessionDep, arquivo: UploadFile, loja_id: int, tor
     return torneio
 
 
-def _importar_metadados(xml: ET.Element, loja_id: int, torneio: Torneio):
+def _importar_metadados(xml: ET.Element, loja_id: int):
     dados = xml.find("data")
     if dados is None:
         raise TopDeckedException.bad_request("Bloco 'data' não encontrado no XML")
 
-    if not torneio.id:
-        torneio.id = dados.findtext("id")
-    torneio.nome = dados.findtext("name")
-    torneio.estado = dados.findtext("state")
-    torneio.tempo_por_rodada = dados.findtext("roundtime", default="30")
-    
+    id = dados.findtext("id")
+    nome = dados.findtext("name")
     cidade = dados.findtext("city")
+    estado = dados.findtext("state")
+    tempo_por_rodada = dados.findtext("roundtime", default="30")
     data_inicio_str = dados.findtext("startdate")
+    
     if not cidade or not data_inicio_str:
         raise TopDeckedException.bad_request("Cidade ou data de início ausentes")
 
-    torneio.cidade = cidade
     try:
-        torneio.data_inicio = datetime.strptime(
-            data_inicio_str, "%d/%m/%Y").date()
+        data_inicio = datetime.strptime(data_inicio_str, "%d/%m/%Y").date()
     except ValueError:
         raise TopDeckedException.bad_request("Data de início em formato inválido")
-    
-    torneio.descricao = f"{torneio.nome} {torneio.data_inicio}"
-    torneio.loja_id = loja_id
-    return torneio
+    descricao = f"{nome} {data_inicio}"
+
+    return Torneio(id=id,
+                   nome=nome,
+                   descricao=descricao,
+                   cidade=cidade,
+                   estado=estado,
+                   tempo_por_rodada=tempo_por_rodada,
+                   data_inicio=data_inicio,
+                   loja_id=loja_id,
+                   finalizado=True)
 
 def _importar_jogadores(xml: ET.Element, session: SessionDep):
     jogadores = []
