@@ -36,12 +36,12 @@ def editar_torneio(session: SessionDep,
         TopDeckedException.forbidden()
         
     dados_para_atualizar = torneio_atualizar.model_dump(
-            exclude={"regra_basica", "regras_adicionais"}, exclude_unset=True)
+            exclude={"regras_adicionais"}, exclude_unset=True)
     
     torneio.sqlmodel_update(dados_para_atualizar)
     
     torneio_atualizado = editar_torneio_regras(torneio, 
-                                               torneio_atualizar.regra_basica, 
+                                               torneio_atualizar.regra_basica_id, 
                                                torneio_atualizar.regras_adicionais)
     session.add(torneio_atualizado)
     

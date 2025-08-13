@@ -36,6 +36,7 @@ class JogadorTorneioLinkBase(SQLModel):
     tipo_jogador_id: int | None = Field(
         default=None, foreign_key="tipojogador.id")
     pontuacao: float = Field(default=0)
+    pontuacao_com_regras: float = Field(default=0)
 
 class JogadorTorneioLink(JogadorTorneioLinkBase, table=True):
     torneio_id: str | None = Field(
@@ -57,16 +58,20 @@ class Loja(LojaBase, table=True):
 
 
 # ---------------------------------- Rodada ----------------------------------
-class Rodada(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    jogador1_id: str = Field(default=None, foreign_key="jogador.pokemon_id")
-    jogador2_id: str = Field(default=None, foreign_key="jogador.pokemon_id")
-    torneio_id: str = Field(default=None, foreign_key="torneio.id")
-    vencedor: str = Field(
+class RodadaBase(SQLModel):
+    jogador1_id: str = Field(primary_key=True,
+            default=None, foreign_key="jogador.pokemon_id")
+    jogador2_id: str = Field(
+        primary_key=True, default=None, foreign_key="jogador.pokemon_id")
+    vencedor: Optional[str] = Field(
         default=None, foreign_key="jogador.pokemon_id", nullable=True)
     num_rodada: int = Field(default=None)
     mesa: Optional[int] = Field(default=None)
     data_de_inicio: date = Field(default=None)
+
+class Rodada(RodadaBase, table=True):
+    torneio_id: str = Field(
+        primary_key=True, default=None, foreign_key="torneio.id")
 
 
 # ---------------------------------- TipoJogador ----------------------------------
@@ -101,12 +106,15 @@ class TorneioBase(SQLModel):
     taxa: float = Field(default=0)
     premio: Optional[str] = Field(default=None, nullable=True)
     n_rodadadas: int = Field(default=0)
+    regra_basica_id: Optional[int] = Field(
+        default=None, foreign_key="tipojogador.id", nullable=True)
 
 
 
 class Torneio(TorneioBase, table=True):
     id: Optional[str] = Field(default=None, primary_key=True)
     loja_id: int = Field(foreign_key="loja.id", nullable=True)
-    loja: Optional[Loja] = Relationship(sa_relationship_kwargs={"lazy": "joined"})
-    jogadores: List["JogadorTorneioLink"] = Relationship()
+    loja: Optional["Loja"] = Relationship(sa_relationship_kwargs={"lazy": "joined"})
     rodadas: List["Rodada"] = Relationship()
+    jogadores: List["JogadorTorneioLink"] = Relationship()
+    regra_basica: Optional["TipoJogador"] = Relationship()

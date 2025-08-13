@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict
 from app.schemas.JogadorTorneioLink import JogadorTorneioLinkPublico
-from app.models import TorneioBase
+from app.models import TorneioBase, RodadaBase
 from datetime import date, time
 
 
@@ -19,10 +19,11 @@ class TorneioAtualizar(TorneioBase):
     premio: str | None = None
     n_rodadadas: int | None = None
 
-    regra_basica: int | None = None
+    regra_basica_id: int | None = None
     regras_adicionais: Optional[Dict[str, int]] | None = None
 
 
 class TorneioPublico(TorneioBase):
     id: str
     jogadores: List["JogadorTorneioLinkPublico"]
+    rodadas: List["RodadaBase"]
