@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, Depends
 from sqlmodel import text
 from typing import Annotated
-from app.utils.TorneioUtil import importar_torneio, retornar_torneio_completo, editar_torneio_regras
+from app.utils.TorneioUtil import importar_torneio, retornar_torneio_completo, editar_torneio_regras, calcular_pontuacao
 from app.schemas.Torneio import TorneioPublico, TorneioAtualizar
 from app.models import Torneio, TorneioBase
 from app.core.db import SessionDep
@@ -43,8 +43,10 @@ def editar_torneio(session: SessionDep,
     torneio_atualizado = editar_torneio_regras(torneio, 
                                                torneio_atualizar.regra_basica, 
                                                torneio_atualizar.regras_adicionais)
-    
     session.add(torneio_atualizado)
+    
+    calcular_pontuacao(session, torneio_atualizado)
+    
     session.commit()
     session.refresh(torneio_atualizado)
     
