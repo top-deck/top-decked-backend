@@ -23,7 +23,7 @@ class JogadorBase(SQLModel):
 
 class Jogador(JogadorBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    usuario_id: int = Field(foreign_key="usuario.id", nullable=True)
+    usuario_id: int = Field(foreign_key="usuario.id", nullable=True, ondelete="SET NULL")
     usuario: Usuario = Relationship(sa_relationship_kwargs={"lazy": "joined"})
     pokemon_id: str | None = Field(default=None, nullable=True, unique=True)
     torneios: List["JogadorTorneioLink"] = Relationship(

@@ -90,5 +90,5 @@ def delete_usuario(session: SessionDep,
     if jogador_token.usuario_id != jogador.usuario_id:
         raise TopDeckedException.forbidden()
 
-    session.delete(jogador)
+    session.delete(jogador.usuario)
     session.commit()
