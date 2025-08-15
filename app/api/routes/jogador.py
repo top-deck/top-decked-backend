@@ -8,6 +8,7 @@ from app.core.exception import TopDeckedException
 from app.core.security import TokenData
 from app.models import Usuario, Jogador, JogadorTorneioLink
 from app.utils.UsuarioUtil import verificar_novo_usuario
+from app.utils.JogadorUtil import calcular_estatisticas
 from app.dependencies import retornar_jogador_atual
 from typing import Annotated
 
@@ -112,5 +113,4 @@ def get_estatisticas(session: SessionDep,
                      token_data:Annotated[TokenData, Depends(retornar_jogador_atual)]):
     jogador = session.get(Jogador, token_data.id)
     
-    calcular_estatisticas(session, jogador)
-
+    return calcular_estatisticas(session, jogador)

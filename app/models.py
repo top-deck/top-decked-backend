@@ -42,6 +42,7 @@ class JogadorTorneioLinkBase(SQLModel):
 class JogadorTorneioLink(JogadorTorneioLinkBase, table=True):
     torneio_id: str | None = Field(
         default=None, foreign_key="torneio.id", primary_key=True, ondelete="CASCADE")
+    torneio: Optional["Torneio"] | None = Relationship(back_populates="jogadores")
     tipo_jogador: Optional["TipoJogador"] | None = Relationship()
     jogador: Optional["Jogador"] | None = Relationship(back_populates="torneios")
 
@@ -56,6 +57,7 @@ class Loja(LojaBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuario.id", unique=True)
     usuario: Usuario = Relationship(sa_relationship_kwargs={"lazy": "joined"})
+    torneios: List["Torneio"] = Relationship(back_populates="loja")
 
 
 # ---------------------------------- Rodada ----------------------------------
@@ -113,7 +115,8 @@ class TorneioBase(SQLModel):
 class Torneio(TorneioBase, table=True):
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     loja_id: int = Field(foreign_key="loja.id", nullable=True)
-    loja: Optional["Loja"] = Relationship(sa_relationship_kwargs={"lazy": "joined"})
+    loja: Optional["Loja"] = Relationship(back_populates="torneios", sa_relationship_kwargs={"lazy": "joined"})
     rodadas: List["Rodada"] = Relationship(sa_relationship_kwargs={"cascade": "all, delete-orphan"})
-    jogadores: List["JogadorTorneioLink"] = Relationship(sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    jogadores: List["JogadorTorneioLink"] = Relationship(back_populates="torneio", 
+                                                         sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     regra_basica: Optional["TipoJogador"] = Relationship()

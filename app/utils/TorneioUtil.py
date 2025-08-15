@@ -275,7 +275,7 @@ def calcular_taxa_vitoria(session: SessionDep, jogador: Jogador):
     vitorias, derrotas, empates = 0, 0, 0
     
     rodadas = session.exec(
-                ((Rodada.jogador1_id == jogador.pokemon_id) | (Rodada.jogador2_id == jogador.pokemon_id)))
+                ((Rodada.jogador1_id == jogador.pokemon_id) or (Rodada.jogador2_id == jogador.pokemon_id)))
 
     for rodada in rodadas:
         if(rodada.vencedor == jogador.pokemon_id):
