@@ -48,7 +48,7 @@ def _importar_metadados(xml: ET.Element, loja_id: int):
         raise TopDeckedException.bad_request("Cidade ou data de início ausentes")
 
     try:
-        data_inicio = datetime.strptime(data_inicio_str, "%d/%m/%Y").date()
+        data_inicio = datetime.strptime(data_inicio_str, "%m/%d/%Y").date()
     except ValueError:
         raise TopDeckedException.bad_request("Data de início em formato inválido")
     descricao = f"{nome} {data_inicio}"
