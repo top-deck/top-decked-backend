@@ -88,12 +88,12 @@ def criar_torneio(session:SessionDep, torneio: TorneioBase, loja: Annotated[Toke
     session.add(novo_torneio)
     session.commit()
     session.refresh(novo_torneio)
-    return novo_torneio
+    return retornar_torneio_completo(novo_torneio)
 
 @router.get("/", response_model=list[TorneioPublico])
 def get_torneios(session: SessionDep):
     torneios = session.exec(select(Torneio))
-    return torneios
+    return [retornar_torneio_completo(torneio) for torneio in torneios]
 
 @router.get("/loja", response_model=list[TorneioPublico])
 def get_loja_torneios(session: SessionDep, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
@@ -103,7 +103,7 @@ def get_loja_torneios(session: SessionDep, loja: Annotated[TokenData, Depends(re
     
     if not torneios:
         raise TopDeckedException.not_found("Nenhum torneio encontrado.")
-    return torneios
+    return [retornar_torneio_completo(torneio) for torneio in torneios]
 
 @router.get("/{torneio_id}", response_model=TorneioPublico)
 def get_torneio_por_id(
@@ -119,7 +119,7 @@ def get_torneio_por_id(
     if not torneio:
         raise TopDeckedException.not_found("Torneio não encontrado.")
 
-    return torneio
+    return retornar_torneio_completo(torneio)
 
 @router.post("/{torneio_id}/inscricao", response_model=JogadorTorneioLink)
 def inscrever_jogador(session: SessionDep, torneio_id: str, token_data: Annotated[TokenData, Depends(retornar_jogador_atual)]):
