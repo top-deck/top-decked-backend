@@ -24,6 +24,15 @@ def importar_torneios(session: SessionDep, arquivo: UploadFile, loja: Annotated[
     torneio_completo = retornar_torneio_completo(torneio)
     return torneio_completo
 
+@router.get("/loja", response_model=list[TorneioPublico])
+def get_loja_torneios(session: SessionDep, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
+    torneios = session.exec(select(Torneio).where(
+        Torneio.loja_id == loja.id
+    )).all()
+    
+    if not torneios:
+        raise TopDeckedException.not_found("Nenhum torneio encontrado.")
+    return [retornar_torneio_completo(torneio) for torneio in torneios]
 
 @router.post("/{torneio_id}/importar", response_model=TorneioPublico)
 def importar_torneios(session: SessionDep, arquivo: UploadFile, torneio_id: str, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
@@ -95,15 +104,6 @@ def get_torneios(session: SessionDep):
     torneios = session.exec(select(Torneio))
     return [retornar_torneio_completo(torneio) for torneio in torneios]
 
-@router.get("/loja", response_model=list[TorneioPublico])
-def get_loja_torneios(session: SessionDep, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
-    torneios = session.exec(select(Torneio).where(
-        Torneio.loja_id == loja.id
-    )).all()
-    
-    if not torneios:
-        raise TopDeckedException.not_found("Nenhum torneio encontrado.")
-    return [retornar_torneio_completo(torneio) for torneio in torneios]
 
 
 @router.get("/{torneio_id}", response_model=TorneioPublico)
