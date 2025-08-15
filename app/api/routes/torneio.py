@@ -8,6 +8,8 @@ from app.core.db import SessionDep
 from app.core.exception import TopDeckedException
 from app.core.security import TokenData
 from app.dependencies import retornar_loja_atual
+from sqlmodel import select
+
 
 router = APIRouter(
     prefix="/lojas/torneios",
@@ -86,3 +88,8 @@ def criar_torneio(session:SessionDep, torneio: TorneioBase, loja: Annotated[Toke
     session.commit()
     session.refresh(novo_torneio)
     return novo_torneio
+
+@router.get("/", response_model=list[TorneioPublico])
+def get_torneios(session: SessionDep):
+    torneios = session.exec(select(Torneio))
+    return torneios
