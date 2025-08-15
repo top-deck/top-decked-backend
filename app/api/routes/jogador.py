@@ -40,6 +40,13 @@ def create_jogador(jogador: JogadorCriar, session: SessionDep):
     session.refresh(db_jogador)
     return db_jogador
 
+@router.get("/estatisticas")
+def get_estatisticas(session: SessionDep,
+                     token_data: Annotated[TokenData, Depends(retornar_jogador_atual)]):
+    jogador = session.get(Jogador, token_data.id)
+
+    return calcular_estatisticas(session, jogador)
+
 @router.get("/{jogador_id}", response_model=JogadorPublico)
 def read_jogador(jogador_id: int, session: SessionDep):
     jogador = session.get(Jogador, jogador_id)
@@ -108,10 +115,3 @@ def torneios_inscritos(session: SessionDep,
         raise TopDeckedException.not_found("Jogador não se inscreveu em nenhum torneio")
     
     return inscricoes
-    
-@router.get("/estatisticas")
-def get_estatisticas(session: SessionDep,
-                     token_data:Annotated[TokenData, Depends(retornar_jogador_atual)]):
-    jogador = session.get(Jogador, token_data.id)
-    
-    return calcular_estatisticas(session, jogador)

@@ -133,7 +133,7 @@ def desempenho_por_formato(session: SessionDep, jogador: Jogador) -> list[Rankin
     })
 
     for link in links:
-        formato = link.torneio.formato | "Desconhecido"
+        formato = link.torneio.formato if link.torneio.formato else "Desconhecido"
         formatos_data[formato]["pontos"] += float(link.pontuacao_com_regras)
 
         rodadas = session.exec(

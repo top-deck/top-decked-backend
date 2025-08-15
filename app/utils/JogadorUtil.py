@@ -13,7 +13,7 @@ def calcular_estatisticas(session: SessionDep, jogador: Jogador):
                                   .where(JogadorTorneioLink.jogador_id == jogador.pokemon_id))
 
     torneios_historico = _retornar_estatisticas_torneio(session, jogador, torneios_links)
-    return {estat_por_mes, torneios_historico}
+    return {"estatisticas_anuais": estat_por_mes, "historico" : torneios_historico}
 
 def _retornar_estatisticas_torneio(session: SessionDep, jogador: Jogador, 
                                    torneios_links: List["JogadorTorneioLink"]):
@@ -84,19 +84,19 @@ def colocacao_jogador(session: SessionDep, torneio: Torneio, jogador: Jogador):
     ranking.sort(key=lambda x: (x[1], x[2]), reverse=True)
     
     for i, (j, _, _) in enumerate(ranking, start=1):
-        if j.id == jogador.id:
+        if j.jogador_id == jogador.pokemon_id:
             return i
     return None
 
-def calcular_forca_oponente(session: SessionDep, torneio: Torneio, jogador: Jogador):
+def calcular_forca_oponente(session: SessionDep, torneio: Torneio, link: JogadorTorneioLink):
     oponentes_vencidos = []
     rodadas = session.exec(
         select(Rodada).where(Rodada.torneio_id == torneio.id)
     ).all()
 
     for rodada in rodadas:
-        if rodada.vencedor_id == jogador.id:
-            oponente_id = rodada.jogador2_id if rodada.jogador1_id == jogador.id else rodada.jogador1_id
+        if rodada.vencedor == link.jogador_id:
+            oponente_id = rodada.jogador2_id if rodada.jogador1_id == link.jogador_id else rodada.jogador1_id
             oponentes_vencidos.append(oponente_id)
     
     if not oponentes_vencidos:
@@ -104,7 +104,7 @@ def calcular_forca_oponente(session: SessionDep, torneio: Torneio, jogador: Joga
 
     taxas = []
     for op_id in oponentes_vencidos:
-        op_jogador = session.get(Jogador, op_id)
-        taxas.append(calcular_taxa_vitoria(session, torneio, op_jogador))
+        op_jogador = session.exec(select(Jogador).where(Jogador.pokemon_id == op_id)).first()
+        taxas.append(calcular_taxa_vitoria(session, op_jogador))
 
     return sum(taxas) / len(taxas)
