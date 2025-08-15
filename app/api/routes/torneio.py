@@ -106,11 +106,11 @@ def get_loja_torneios(session: SessionDep, loja: Annotated[TokenData, Depends(re
     return [retornar_torneio_completo(torneio) for torneio in torneios]
 
 
-@router.get("/torneio_id}", response_model=TorneioPublico)
+@router.get("/{torneio_id}", response_model=TorneioPublico)
 def get_torneio_por_loja(
     torneio_id: str,
     session: SessionDep,
-    token_data: Annotated[TokenData, Depends(retornar_usuario_atual)]
+    _: Annotated[TokenData, Depends(retornar_usuario_atual)]
 ):
     torneio = session.exec(select(Torneio).where(
         Torneio.id == torneio_id,
