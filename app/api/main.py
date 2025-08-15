@@ -1,39 +1,11 @@
-from dotenv import load_dotenv
-
-load_dotenv(override=True)
-
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
-import uvicorn
-from fastapi.middleware.cors import CORSMiddleware
-
-from app.api.main import api_router
-from app.core.db import create_db_and_tables
+from fastapi import APIRouter
+from app.api.routes import loja, jogador, login, torneio, tipoJogador
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    create_db_and_tables()
-    yield
+api_router = APIRouter()
 
-
-app = FastAPI(lifespan=lifespan)
-
-origins = [
-    "http://localhost",
-    "http://localhost:3000",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.include_router(api_router)
-
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+api_router.include_router(jogador.router)
+api_router.include_router(loja.router)
+api_router.include_router(login.router)
+api_router.include_router(torneio.router)
+api_router.include_router(tipoJogador.router)
