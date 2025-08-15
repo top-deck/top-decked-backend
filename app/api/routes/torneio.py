@@ -59,7 +59,7 @@ def editar_torneio(session: SessionDep,
     torneio.sqlmodel_update(dados_para_atualizar)
     session.add(torneio)
     
-    if torneio.regra_basica or torneio.regras_adicionais:
+    if torneio_atualizar.regra_basica_id or torneio_atualizar.regras_adicionais:
         torneio = editar_torneio_regras(torneio, 
                                         torneio_atualizar.regra_basica_id, 
                                         torneio_atualizar.regras_adicionais)
