@@ -125,13 +125,17 @@ def get_torneio_por_id(
 def inscrever_jogador(session: SessionDep, torneio_id: str, token_data: Annotated[TokenData, Depends(retornar_jogador_atual)]):
     torneio = session.get(Torneio, torneio_id)
     jogador = session.get(Jogador, token_data.id)
-    
     if not torneio:
         raise TopDeckedException.not_found("Torneio não existe")
     if torneio.finalizado:
         raise TopDeckedException.bad_request("Torneio já finalizado")
     if not jogador.pokemon_id:
         raise TopDeckedException.bad_request("Jogador não possui um Pokémon ID vinculado")
+    
+    link = session.get(JogadorTorneioLink, {"torneio_id" : torneio.id,
+                                            "jogador_id": jogador.pokemon_id})
+    if link:
+        raise TopDeckedException.bad_request("Inscrição já realizada")
     
     inscricao = JogadorTorneioLink(
         jogador_id=jogador.pokemon_id,

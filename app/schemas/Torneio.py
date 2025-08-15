@@ -1,5 +1,6 @@
 from typing import Optional, List, Dict
 from app.schemas.JogadorTorneioLink import JogadorTorneioLinkPublico
+from app.schemas.Loja import LojaPublico
 from app.models import TorneioBase, RodadaBase
 from datetime import date, time
 
@@ -28,3 +29,11 @@ class TorneioPublico(TorneioBase):
     id: str
     jogadores: List["JogadorTorneioLinkPublico"] | None
     rodadas: List["RodadaBase"] | None
+    loja: Optional["LojaPublico"]
+
+
+class TorneioJogadorPublico(TorneioBase):
+    id: str
+    pontuacao: float = 0
+    colocacao: int
+    participantes: int

@@ -163,6 +163,7 @@ def _importar_partidas(partidas: ET.Element, torneio_id: str, num_rodada: int, s
 def retornar_torneio_completo(torneio: Torneio):
     torneio_dict = torneio.model_dump()
     
+    torneio_dict["loja"] = torneio.loja
     torneio_dict["jogadores"] = [
         {
             "jogador_id": link.jogador_id,
@@ -189,7 +190,7 @@ def retornar_torneio_completo(torneio: Torneio):
     return torneio_dict
 
 
-def editar_torneio_regras(torneio: Torneio, regra_basica: int, regras_adicionais: dict) -> Torneio:
+def editar_torneio_regras(torneio: Torneio, regra_basica: int, regras_adicionais: dict):
     torneio.regra_basica_id = regra_basica
     
     for jogador in torneio.jogadores:
@@ -269,3 +270,20 @@ def calcular_pontuacao(session: SessionDep, torneio: Torneio):
     jogador2_link.pontuacao_com_regras += torneio.pontuacao_de_participacao
     session.add(jogador1_link)
     session.add(jogador2_link)
+    
+def calcular_taxa_vitoria(session: SessionDep, jogador: Jogador):
+    vitorias, derrotas, empates = 0, 0, 0
+    
+    rodadas = session.exec(
+                ((Rodada.jogador1_id == jogador.pokemon_id) | (Rodada.jogador2_id == jogador.pokemon_id)))
+
+    for rodada in rodadas:
+        if(rodada.vencedor == jogador.pokemon_id):
+            vitorias += 1
+        elif(rodada.vencedor is not None):
+            derrotas += 1
+        else:
+            empates += 1
+            
+    total = vitorias + derrotas + empates
+    return int((vitorias / total) * 100) if total > 0 else 0
