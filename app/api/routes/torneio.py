@@ -93,3 +93,13 @@ def criar_torneio(session:SessionDep, torneio: TorneioBase, loja: Annotated[Toke
 def get_torneios(session: SessionDep):
     torneios = session.exec(select(Torneio))
     return torneios
+
+@router.get("/loja", response_model=list[TorneioPublico])
+def get_loja_torneios(session: SessionDep, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
+    tipos = session.exec(select(Torneio).where(
+        Torneio.loja_id == loja.id
+    )).all()
+    
+    if not tipos:
+        raise TopDeckedException.not_found("Nenhum torneio encontrado.")
+    return tipos
