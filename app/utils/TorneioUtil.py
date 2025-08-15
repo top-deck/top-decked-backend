@@ -198,7 +198,7 @@ def editar_torneio_regras(torneio: Torneio, regra_basica: int, regras_adicionais
         jogador.pontuacao_com_regras = 0
         jogador_id = jogador.jogador_id
         
-        if jogador_id in regras_adicionais:
+        if regras_adicionais and jogador_id in regras_adicionais:
             jogador.tipo_jogador_id = regras_adicionais[jogador_id]
         else:
             jogador.tipo_jogador_id = regra_basica
@@ -260,11 +260,11 @@ def calcular_pontuacao(session: SessionDep, torneio: Torneio):
             jogador2_link.pontuacao_com_regras += (jogador2_tipo.pt_empate
                                                 + jogador1_tipo.pt_oponente_empate)
             
-            jogador1_link.pontuacao_com_regras += (regra_basica.pt_empate
-                                                   + regra_basica.pt_oponente_empate)
+            jogador1_link.pontuacao += (regra_basica.pt_empate
+                                        + regra_basica.pt_oponente_empate)
             
-            jogador2_link.pontuacao_com_regras += (regra_basica.pt_empate
-                                                   + regra_basica.pt_oponente_empate)
+            jogador2_link.pontuacao += (regra_basica.pt_empate
+                                        + regra_basica.pt_oponente_empate)
             
     jogador1_link.pontuacao_com_regras += torneio.pontuacao_de_participacao
     jogador2_link.pontuacao_com_regras += torneio.pontuacao_de_participacao
@@ -274,8 +274,8 @@ def calcular_pontuacao(session: SessionDep, torneio: Torneio):
 def calcular_taxa_vitoria(session: SessionDep, jogador: Jogador):
     vitorias, derrotas, empates = 0, 0, 0
     
-    rodadas = session.exec(
-                ((Rodada.jogador1_id == jogador.pokemon_id) or (Rodada.jogador2_id == jogador.pokemon_id)))
+    rodadas = session.exec(select(Rodada).where(
+                ((Rodada.jogador1_id == jogador.pokemon_id) | (Rodada.jogador2_id == jogador.pokemon_id))))
 
     for rodada in rodadas:
         if(rodada.vencedor == jogador.pokemon_id):

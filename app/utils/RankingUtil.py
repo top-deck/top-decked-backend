@@ -1,19 +1,15 @@
 from app.core.db import SessionDep
-from app.schemas.Ranking import Ranking, RankingPorLoja
+from app.schemas.Ranking import Ranking, RankingPorLoja, RankingPorFormato
 from sqlmodel import select, extract
 from sqlalchemy.orm import joinedload, selectinload
 from app.models import Jogador, JogadorTorneioLink, Rodada, Loja, Torneio
 from app.utils.TorneioUtil import calcular_taxa_vitoria
+from collections import defaultdict
 
 
 def calcula_ranking_geral(session: SessionDep):
     jogadores = session.exec(
         select(Jogador)
-        .options(
-            joinedload(Jogador.torneios)
-            .joinedload(JogadorTorneioLink.torneio),
-            joinedload(Jogador.usuario),
-        )
     ).all()
     ranking = []
     
@@ -35,7 +31,7 @@ def calcula_ranking_geral(session: SessionDep):
             rodadas = session.exec(
                 select(Rodada).where(
                     (Rodada.torneio_id == link.torneio_id) &
-                    ((Rodada.jogador1_id == jogador.pokemon_id) or (Rodada.jogador2_id == jogador.pokemon_id))
+                    ((Rodada.jogador1_id == jogador.pokemon_id) | (Rodada.jogador2_id == jogador.pokemon_id))
                 )
             ).all()
 
@@ -72,10 +68,11 @@ def calcula_ranking_geral_por_loja(session: SessionDep, mes: int = None):
                 .join(JogadorTorneioLink.torneio)
                 .where(
                     JogadorTorneioLink.jogador_id == jogador.pokemon_id,
-                    Torneio.loja_id == loja.id,
-                    ((mes is None) or (extract('month', Torneio.data_inicio) == mes))
-                )
-            ).all()
+                    Torneio.loja_id == loja.id))
+                
+            if mes is not None:
+                links = links.where(
+                    extract("month", Torneio.data_inicio) == mes).all()
             if(links == []):
                 continue
             total_pontos = 0
@@ -90,7 +87,7 @@ def calcula_ranking_geral_por_loja(session: SessionDep, mes: int = None):
                 rodadas = session.exec(
                     select(Rodada).where(
                         (Rodada.torneio_id == link.torneio_id) &
-                        ((Rodada.jogador1_id == jogador.pokemon_id) or (Rodada.jogador2_id == jogador.pokemon_id))
+                        ((Rodada.jogador1_id == jogador.pokemon_id) | (Rodada.jogador2_id == jogador.pokemon_id))
                     )
                 ).all()
 
@@ -116,5 +113,52 @@ def calcula_ranking_geral_por_loja(session: SessionDep, mes: int = None):
             ))
         
     ranking.sort(key=lambda x: x.pontos, reverse=True)
+
+    return ranking
+
+def desempenho_por_formato(session: SessionDep, jogador: Jogador) -> list[RankingPorFormato]:
+    links = session.exec(
+        select(JogadorTorneioLink)
+        .join(JogadorTorneioLink.torneio)
+        .where(JogadorTorneioLink.jogador_id == jogador.pokemon_id)
+    ).all()
+
+    if not links:
+        return []
+
+    formatos_data = defaultdict(lambda: {
+        "pontos": 0,
+        "vitorias": 0,
+        "total_partidas": 0
+    })
+
+    for link in links:
+        formato = link.torneio.formato | "Desconhecido"
+        formatos_data[formato]["pontos"] += float(link.pontuacao_com_regras)
+
+        rodadas = session.exec(
+            select(Rodada).where(
+                (Rodada.torneio_id == link.torneio_id) &
+                ((Rodada.jogador1_id == jogador.pokemon_id) or
+                 (Rodada.jogador2_id == jogador.pokemon_id))
+            )
+        ).all()
+
+        for rodada in rodadas:
+            formatos_data[formato]["total_partidas"] += 1
+            if rodada.vencedor == jogador.pokemon_id:
+                formatos_data[formato]["vitorias"] += 1
+
+    ranking = []
+    for formato, dados in formatos_data.items():
+        total_partidas = dados["total_partidas"]
+        taxa_vitoria = round(dados["vitorias"] / total_partidas, 2) if total_partidas > 0 else 0.0
+
+        ranking.append(RankingPorFormato(
+            formato=formato,
+            pontos=dados["pontos"],
+            vitorias=dados["vitorias"],
+            taxa_vitoria=taxa_vitoria
+        ))
 
     return ranking

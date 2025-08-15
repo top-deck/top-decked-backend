@@ -18,3 +18,9 @@ class RankingPorLoja(BaseModel):
     derrotas: int
     empates: int
     taxa_vitoria: float
+
+class RankingPorFormato(BaseModel):
+    formato: str
+    pontos: float
+    vitorias: int
+    taxa_vitoria: float
