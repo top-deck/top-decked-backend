@@ -57,18 +57,19 @@ def editar_torneio(session: SessionDep,
             exclude={"regras_adicionais"}, exclude_unset=True)
     
     torneio.sqlmodel_update(dados_para_atualizar)
+    session.add(torneio)
     
-    torneio_atualizado = editar_torneio_regras(torneio, 
-                                               torneio_atualizar.regra_basica_id, 
-                                               torneio_atualizar.regras_adicionais)
-    session.add(torneio_atualizado)
+    if torneio.regra_basica or torneio.regras_adicionais:
+        torneio = editar_torneio_regras(torneio, 
+                                        torneio_atualizar.regra_basica_id, 
+                                        torneio_atualizar.regras_adicionais)
     
-    calcular_pontuacao(session, torneio_atualizado)
+        session.add(torneio)
+        calcular_pontuacao(session, torneio)
     
     session.commit()
-    session.refresh(torneio_atualizado)
-    
-    return retornar_torneio_completo(torneio_atualizado)
+    session.refresh(torneio)
+    return retornar_torneio_completo(torneio)
 
 
 @router.delete("/", status_code=204)
