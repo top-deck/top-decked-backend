@@ -5,15 +5,36 @@ from sqlmodel import select
 from typing import List
 from app.utils.Enums import MesEnum
 from app.utils.TorneioUtil import calcular_taxa_vitoria
+from app.utils.RankingUtil import calcula_ranking_geral
+from datetime import datetime
+
+
+
+def posicao_do_jogador(ranking: list, jogador_id: str):
+    for index, r in enumerate(ranking, start=1):
+        if r.jogador_id == jogador_id:
+            return index
+    return None
 
 def calcular_estatisticas(session: SessionDep, jogador: Jogador):
-    estat_por_mes = _retornar_estatisticas(session, jogador.pokemon_id)
-    
+    estat_por_mes = _retornar_estatisticas_mensais(session, jogador.pokemon_id)
     torneios_links = session.exec(select(JogadorTorneioLink)
                                   .where(JogadorTorneioLink.jogador_id == jogador.pokemon_id))
-
+    
+    torneio_totais = len(torneios_links.all())
     torneios_historico = _retornar_estatisticas_torneio(session, jogador, torneios_links)
-    return {"estatisticas_anuais": estat_por_mes, "historico" : torneios_historico}
+    taxa_vitoria = calcular_taxa_vitoria(session, jogador)
+    rank_geral = posicao_do_jogador(calcula_ranking_geral(session), jogador.pokemon_id)
+    rank_mensal = posicao_do_jogador(calcula_ranking_geral(session, datetime.now().month), jogador.pokemon_id)
+    rank_anual = posicao_do_jogador(calcula_ranking_geral(session, datetime.now().year), jogador.pokemon_id)
+
+    return {"estatisticas_anuais": estat_por_mes, 
+            "torneio_totais" : torneio_totais,
+            "taxa_vitoria" : taxa_vitoria,
+            "rank_geral" : rank_geral,
+            "rank_mensal": rank_mensal,
+            "rank_anual": rank_anual,
+            "historico" : torneios_historico}
 
 def _retornar_estatisticas_torneio(session: SessionDep, jogador: Jogador, 
                                    torneios_links: List["JogadorTorneioLink"]):
@@ -30,7 +51,8 @@ def _retornar_estatisticas_torneio(session: SessionDep, jogador: Jogador,
         })
     return estatisticas
         
-def _retornar_estatisticas(session: SessionDep, jogador_id: str):
+
+def _retornar_estatisticas_mensais(session: SessionDep, jogador_id: str):
     rodadas = session.exec(
         select(Rodada).where(
             (Rodada.jogador1_id == jogador_id) or

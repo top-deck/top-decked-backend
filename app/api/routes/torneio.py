@@ -7,7 +7,7 @@ from app.models import Torneio, TorneioBase, JogadorTorneioLink, Jogador
 from app.core.db import SessionDep
 from app.core.exception import TopDeckedException
 from app.core.security import TokenData
-from app.dependencies import retornar_loja_atual, retornar_jogador_atual
+from app.dependencies import retornar_loja_atual, retornar_jogador_atual, retornar_usuario_atual
 from sqlmodel import select
 
 
@@ -105,15 +105,15 @@ def get_loja_torneios(session: SessionDep, loja: Annotated[TokenData, Depends(re
         raise TopDeckedException.not_found("Nenhum torneio encontrado.")
     return [retornar_torneio_completo(torneio) for torneio in torneios]
 
-@router.get("/{torneio_id}", response_model=TorneioPublico)
-def get_torneio_por_id(
+
+@router.get("/torneio_id}", response_model=TorneioPublico)
+def get_torneio_por_loja(
     torneio_id: str,
     session: SessionDep,
-    loja: Annotated[TokenData, Depends(retornar_loja_atual)]
+    token_data: Annotated[TokenData, Depends(retornar_usuario_atual)]
 ):
     torneio = session.exec(select(Torneio).where(
         Torneio.id == torneio_id,
-        Torneio.loja_id == loja.id
     )).first()
 
     if not torneio:

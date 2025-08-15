@@ -35,5 +35,10 @@ class EstatisticasAnuais(BaseModel):
 
 
 class JogadorEstatisticas(BaseModel):
+    torneio_totais: int
+    taxa_vitoria: int = 0
+    rank_geral: int
+    rank_mensal: int
+    rank_anual: int
     estatisticas_anuais: List["EstatisticasAnuais"]
     historico: List["TorneioJogadorPublico"]

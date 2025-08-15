@@ -103,7 +103,7 @@ def delete_usuario(session: SessionDep,
     session.delete(jogador.usuario)     
     session.commit()
 
-@router.get("/torneios/inscritos", response_model=JogadorTorneioLink)
+@router.get("/torneios/inscritos")
 def torneios_inscritos(session: SessionDep,
                        token_data: Annotated[TokenData, Depends(retornar_jogador_atual)]):
     jogador = session.get(Jogador, token_data.id)

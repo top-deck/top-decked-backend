@@ -7,7 +7,7 @@ from app.utils.TorneioUtil import calcular_taxa_vitoria
 from collections import defaultdict
 
 
-def calcula_ranking_geral(session: SessionDep):
+def calcula_ranking_geral(session: SessionDep, mes = None, ano = None):
     jogadores = session.exec(
         select(Jogador)
     ).all()
@@ -28,13 +28,18 @@ def calcula_ranking_geral(session: SessionDep):
             total_torneios += 1
             total_pontos += int(link.pontuacao_com_regras)
 
-            rodadas = session.exec(
-                select(Rodada).where(
+            rodadas = select(Rodada).where(
                     (Rodada.torneio_id == link.torneio_id) &
                     ((Rodada.jogador1_id == jogador.pokemon_id) | (Rodada.jogador2_id == jogador.pokemon_id))
                 )
-            ).all()
-
+            if mes:
+                rodadas = rodadas.where(
+                    extract("month", Rodada.data_de_inicio) == mes)
+            if ano:
+                rodadas = rodadas.where(
+                    extract("year", Rodada.data_de_inicio) == ano)
+            
+            rodadas = session.exec(rodadas).all()
             for rodada in rodadas:
                 if(rodada.vencedor == jogador.pokemon_id):
                     total_vitorias += 1
@@ -44,6 +49,7 @@ def calcula_ranking_geral(session: SessionDep):
                     total_empates += 1
 
         ranking.append(Ranking(
+            jogador_id=jogador.pokemon_id,
             nome_jogador=jogador.nome,
             pontos=total_pontos,
             torneios=total_torneios,
