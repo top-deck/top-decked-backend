@@ -96,10 +96,26 @@ def get_torneios(session: SessionDep):
 
 @router.get("/loja", response_model=list[TorneioPublico])
 def get_loja_torneios(session: SessionDep, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
-    tipos = session.exec(select(Torneio).where(
+    torneios = session.exec(select(Torneio).where(
         Torneio.loja_id == loja.id
     )).all()
     
-    if not tipos:
+    if not torneios:
         raise TopDeckedException.not_found("Nenhum torneio encontrado.")
-    return tipos
+    return torneios
+
+@router.get("/{torneio_id}", response_model=TorneioPublico)
+def get_torneio_por_id(
+    torneio_id: str,
+    session: SessionDep,
+    loja: Annotated[TokenData, Depends(retornar_loja_atual)]
+):
+    torneio = session.exec(select(Torneio).where(
+        Torneio.id == torneio_id,
+        Torneio.loja_id == loja.id
+    )).first()
+
+    if not torneio:
+        raise TopDeckedException.not_found("Torneio não encontrado.")
+
+    return torneio
