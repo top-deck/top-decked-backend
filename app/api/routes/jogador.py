@@ -33,7 +33,9 @@ def create_jogador(jogador: JogadorCriar, session: SessionDep):
 
     db_jogador = Jogador(
         nome=jogador.nome,
-        usuario=novo_usuario
+        usuario=novo_usuario,
+        telefone= jogador.telefone,
+        data_nascimento= jogador.data_nascimento
     )
     session.add(db_jogador)
     session.commit()
@@ -48,7 +50,7 @@ def get_estatisticas(session: SessionDep,
     return calcular_estatisticas(session, jogador)
 
 @router.get("/{jogador_id}", response_model=JogadorPublico)
-def read_jogador(jogador_id: int, session: SessionDep):
+def retornar_jogador(jogador_id: int, session: SessionDep):
     jogador = session.get(Jogador, jogador_id)
     if not jogador:
         raise TopDeckedException.not_found("Jogador nao encontrado")
@@ -70,7 +72,11 @@ def update_jogador(novo: JogadorUpdate, session: SessionDep,
     if novo.senha:
         jogador.usuario.set_senha(novo.senha)
         session.add(jogador.usuario)
-    
+        
+    if novo.email:
+        jogador.usuario.set_email(novo.email, session)
+        session.add(jogador.usuario)
+        
     if novo.pokemon_id:
         jogador_db = session.exec(select(Jogador)
                                   .where(Jogador.pokemon_id == novo.pokemon_id)).first()
