@@ -4,10 +4,11 @@ from pydantic import BaseModel
 from typing import List
 from app.utils.Enums import MesEnum
 from app.schemas.Torneio import TorneioJogadorPublico
-
-
+from datetime import date
+from app.schemas.Usuario import UsuarioPublico
 class JogadorPublico(JogadorBase):
     id: int
+    usuario: UsuarioPublico | None
     pokemon_id: str | None
 
 class JogadorPublicoLoja(JogadorBase):
@@ -19,6 +20,9 @@ class JogadorUpdate(JogadorBase):
     nome: str | None = None
     senha: str | None = None
     pokemon_id: str | None = None
+    telefone: str | None = None
+    email: str | None = None
+    data_nascimento: date | None = None
 
 class JogadorCriar(JogadorBase):
     email: str | None = Field(default=None)
