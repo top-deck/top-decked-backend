@@ -4,7 +4,7 @@ from app.core.exception import TopDeckedException
 from typing import Annotated
 from app.core.security import TokenData
 from app.dependencies import retornar_loja_atual
-from app.schemas.TipoJogador import TipoJogadorPublico
+from app.schemas.TipoJogador import TipoJogadorPublico, TipoJogadorAtualizar
 from app.models import TipoJogador, TipoJogadorBase
 from sqlmodel import select
 
@@ -69,3 +69,25 @@ def delete_tipo_jogador(
 
     session.delete(tipo)
     session.commit()
+
+@router.put("/{tipo_id}", response_model=TipoJogadorPublico)
+def atualizar_tipo_jogador(tipo_id: int,
+    novo : TipoJogadorAtualizar,
+    session: SessionDep,
+    loja: Annotated[TokenData, Depends(retornar_loja_atual)]
+):
+    tipo = session.exec(select(TipoJogador).where(
+        TipoJogador.id == tipo_id,
+        TipoJogador.loja == loja.id
+    )).first()
+
+    if not tipo:
+        raise TopDeckedException.not_found("Tipo Jogador não encontrado")
+
+    novo_tipo_data = novo.model_dump(exclude_unset=True)
+
+    tipo.sqlmodel_update(novo_tipo_data)
+    session.add(tipo)
+    session.commit()
+    session.refresh(tipo)
+    return tipo

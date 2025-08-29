@@ -6,8 +6,9 @@ from typing import Annotated
 from app.core.security import TokenData
 from app.core.exception import TopDeckedException
 from app.core.security import TokenData
-from app.models import Usuario, Jogador
+from app.models import Usuario, Jogador, JogadorTorneioLink
 from app.utils.UsuarioUtil import verificar_novo_usuario
+from app.utils.JogadorUtil import calcular_estatisticas
 from app.dependencies import retornar_jogador_atual
 from typing import Annotated
 
@@ -32,15 +33,24 @@ def create_jogador(jogador: JogadorCriar, session: SessionDep):
 
     db_jogador = Jogador(
         nome=jogador.nome,
-        usuario=novo_usuario
+        usuario=novo_usuario,
+        telefone= jogador.telefone,
+        data_nascimento= jogador.data_nascimento
     )
     session.add(db_jogador)
     session.commit()
     session.refresh(db_jogador)
     return db_jogador
 
+@router.get("/estatisticas")
+def get_estatisticas(session: SessionDep,
+                     token_data: Annotated[TokenData, Depends(retornar_jogador_atual)]):
+    jogador = session.get(Jogador, token_data.id)
+
+    return calcular_estatisticas(session, jogador)
+
 @router.get("/{jogador_id}", response_model=JogadorPublico)
-def read_jogador(jogador_id: int, session: SessionDep):
+def retornar_jogador(jogador_id: int, session: SessionDep):
     jogador = session.get(Jogador, jogador_id)
     if not jogador:
         raise TopDeckedException.not_found("Jogador nao encontrado")
@@ -51,33 +61,38 @@ def read_jogador(jogador_id: int, session: SessionDep):
 def get_jogadores(session : SessionDep): 
     return session.exec(select(Jogador)).all()
     
-@router.put("/{jogador_id}", response_model=JogadorPublico)
-def update_jogador(jogador_id: int, jogador: JogadorUpdate, session: SessionDep):
-    existing_jogador = session.get(Jogador, jogador_id)
+@router.put("/", response_model=JogadorPublico)
+def update_jogador(novo: JogadorUpdate, session: SessionDep, 
+                   token_data : Annotated[TokenData, Depends(retornar_jogador_atual)]):
+    jogador = session.get(Jogador, token_data.id)
     
-    if not existing_jogador:
+    if not jogador:
         raise TopDeckedException.not_found("Jogador nao encontrado")
     
-    if jogador.senha:
-        existing_jogador.usuario.set_senha(jogador.senha)
-        session.add(existing_jogador.usuario)
-    
-    if jogador.pokemon_id:
+    if novo.senha:
+        jogador.usuario.set_senha(novo.senha)
+        session.add(jogador.usuario)
+        
+    if novo.email:
+        jogador.usuario.set_email(novo.email, session)
+        session.add(jogador.usuario)
+        
+    if novo.pokemon_id:
         jogador_db = session.exec(select(Jogador)
-                                  .where(Jogador.pokemon_id == jogador.pokemon_id)).first()
+                                  .where(Jogador.pokemon_id == novo.pokemon_id)).first()
         
         if jogador_db:
-            jogador_db.nome = existing_jogador.nome
-            jogador_db.usuario_id = existing_jogador.usuario_id
-            session.delete(existing_jogador)
-            existing_jogador = jogador_db
+            jogador_db.nome = jogador.nome
+            jogador_db.usuario_id = jogador.usuario_id
+            session.delete(jogador)
+            jogador = jogador_db
     
-    jogador_data = jogador.model_dump(exclude_unset=True, exclude={"senha"})
-    existing_jogador.sqlmodel_update(jogador_data)
-    session.add(existing_jogador)
+    jogador_data = novo.model_dump(exclude_unset=True, exclude={"senha"})
+    jogador.sqlmodel_update(jogador_data)
+    session.add(jogador)
     session.commit()
-    session.refresh(existing_jogador)
-    return existing_jogador
+    session.refresh(jogador)
+    return jogador
 
 @router.delete("/{jogador_id}", status_code=204)
 def delete_usuario(session: SessionDep,
@@ -93,3 +108,16 @@ def delete_usuario(session: SessionDep,
     
     session.delete(jogador.usuario)     
     session.commit()
+
+@router.get("/torneios/inscritos")
+def torneios_inscritos(session: SessionDep,
+                       token_data: Annotated[TokenData, Depends(retornar_jogador_atual)]):
+    jogador = session.get(Jogador, token_data.id)
+
+    inscricoes = session.exec(select(JogadorTorneioLink)
+                              .where(JogadorTorneioLink.jogador_id == jogador.pokemon_id)).all()
+    
+    if not inscricoes:
+        raise TopDeckedException.not_found("Jogador não se inscreveu em nenhum torneio")
+    
+    return inscricoes

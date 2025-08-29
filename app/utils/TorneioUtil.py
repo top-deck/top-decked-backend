@@ -48,7 +48,7 @@ def _importar_metadados(xml: ET.Element, loja_id: int):
         raise TopDeckedException.bad_request("Cidade ou data de início ausentes")
 
     try:
-        data_inicio = datetime.strptime(data_inicio_str, "%d/%m/%Y").date()
+        data_inicio = datetime.strptime(data_inicio_str, "%m/%d/%Y").date()
     except ValueError:
         raise TopDeckedException.bad_request("Data de início em formato inválido")
     descricao = f"{nome} {data_inicio}"
@@ -163,6 +163,7 @@ def _importar_partidas(partidas: ET.Element, torneio_id: str, num_rodada: int, s
 def retornar_torneio_completo(torneio: Torneio):
     torneio_dict = torneio.model_dump()
     
+    torneio_dict["loja"] = torneio.loja
     torneio_dict["jogadores"] = [
         {
             "jogador_id": link.jogador_id,
@@ -189,7 +190,7 @@ def retornar_torneio_completo(torneio: Torneio):
     return torneio_dict
 
 
-def editar_torneio_regras(torneio: Torneio, regra_basica: int, regras_adicionais: dict) -> Torneio:
+def editar_torneio_regras(torneio: Torneio, regra_basica: int, regras_adicionais: dict):
     torneio.regra_basica_id = regra_basica
     
     for jogador in torneio.jogadores:
@@ -197,7 +198,7 @@ def editar_torneio_regras(torneio: Torneio, regra_basica: int, regras_adicionais
         jogador.pontuacao_com_regras = 0
         jogador_id = jogador.jogador_id
         
-        if jogador_id in regras_adicionais:
+        if regras_adicionais and jogador_id in regras_adicionais:
             jogador.tipo_jogador_id = regras_adicionais[jogador_id]
         else:
             jogador.tipo_jogador_id = regra_basica
@@ -259,13 +260,30 @@ def calcular_pontuacao(session: SessionDep, torneio: Torneio):
             jogador2_link.pontuacao_com_regras += (jogador2_tipo.pt_empate
                                                 + jogador1_tipo.pt_oponente_empate)
             
-            jogador1_link.pontuacao_com_regras += (regra_basica.pt_empate
-                                                   + regra_basica.pt_oponente_empate)
+            jogador1_link.pontuacao += (regra_basica.pt_empate
+                                        + regra_basica.pt_oponente_empate)
             
-            jogador2_link.pontuacao_com_regras += (regra_basica.pt_empate
-                                                   + regra_basica.pt_oponente_empate)
+            jogador2_link.pontuacao += (regra_basica.pt_empate
+                                        + regra_basica.pt_oponente_empate)
             
     jogador1_link.pontuacao_com_regras += torneio.pontuacao_de_participacao
     jogador2_link.pontuacao_com_regras += torneio.pontuacao_de_participacao
     session.add(jogador1_link)
     session.add(jogador2_link)
+    
+def calcular_taxa_vitoria(session: SessionDep, jogador: Jogador):
+    vitorias, derrotas, empates = 0, 0, 0
+    
+    rodadas = session.exec(select(Rodada).where(
+                ((Rodada.jogador1_id == jogador.pokemon_id) | (Rodada.jogador2_id == jogador.pokemon_id))))
+
+    for rodada in rodadas:
+        if(rodada.vencedor == jogador.pokemon_id):
+            vitorias += 1
+        elif(rodada.vencedor is not None):
+            derrotas += 1
+        else:
+            empates += 1
+            
+    total = vitorias + derrotas + empates
+    return int((vitorias / total) * 100) if total > 0 else 0

@@ -1,10 +1,12 @@
 from sqlmodel import Field
 from app.models import LojaBase
+from app.schemas.Usuario import UsuarioPublico
 
 
 class LojaPublico(LojaBase):
     id: int
-
+    usuario: UsuarioPublico
+    
 
 class LojaCriar(LojaBase):
     email: str | None = Field(default=None)
@@ -16,3 +18,5 @@ class LojaAtualizar(LojaBase):
     endereco: str | None = None
     email: str | None = None
     senha: str | None = None
+    telefone: str | None = None
+    site: str | None = None
