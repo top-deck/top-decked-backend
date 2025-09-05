@@ -75,8 +75,8 @@ class JogadorTorneioLink(JogadorTorneioLinkBase, table=True):
 class LojaBase(SQLModel):
     nome: str = Field(index=True)
     endereco: str = Field(default=None, index=True)
-    telefone: str = Field(default=None, nullable=True)
-    site: str = Field(default=None)
+    telefone: Optional[str] = Field(default=None, nullable=True)
+    site: Optional[str] = Field(default=None, nullable=True)
 
 
 class Loja(LojaBase, table=True):
