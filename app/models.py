@@ -15,6 +15,7 @@ PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 class UsuarioBase(SQLModel):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True)
+    foto: Optional[str] = Field(default=None, unique=True)
 
 
 class Usuario(UsuarioBase, table=True):

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File
 from sqlmodel import select
 from app.schemas.Jogador import JogadorPublico, JogadorUpdate, JogadorCriar
 from app.core.db import SessionDep
@@ -11,7 +11,7 @@ from app.utils.UsuarioUtil import verificar_novo_usuario
 from app.utils.JogadorUtil import calcular_estatisticas
 from app.dependencies import retornar_jogador_atual
 from typing import Annotated
-
+import os
 
 router = APIRouter(
     prefix="/jogadores",
@@ -62,8 +62,10 @@ def get_jogadores(session : SessionDep):
     return session.exec(select(Jogador)).all()
     
 @router.put("/", response_model=JogadorPublico)
-def update_jogador(novo: JogadorUpdate, session: SessionDep, 
-                   token_data : Annotated[TokenData, Depends(retornar_jogador_atual)]):
+def update_jogador(novo: JogadorUpdate,
+                session: SessionDep, 
+                token_data : Annotated[TokenData, Depends(retornar_jogador_atual)]):
+    
     jogador = session.get(Jogador, token_data.id)
     
     if not jogador:
@@ -86,7 +88,7 @@ def update_jogador(novo: JogadorUpdate, session: SessionDep,
             jogador_db.usuario_id = jogador.usuario_id
             session.delete(jogador)
             jogador = jogador_db
-    
+
     jogador_data = novo.model_dump(exclude_unset=True, exclude={"senha"})
     jogador.sqlmodel_update(jogador_data)
     session.add(jogador)
@@ -121,3 +123,27 @@ def torneios_inscritos(session: SessionDep,
         raise TopDeckedException.not_found("Jogador não se inscreveu em nenhum torneio")
     
     return inscricoes
+
+@router.post("/upload_foto", response_model=JogadorPublico)
+def update_foto(session: SessionDep, 
+                token_data : Annotated[TokenData, Depends(retornar_jogador_atual)],
+                file: UploadFile = File(None)):
+    
+    jogador = session.get(Jogador, token_data.id)
+    
+    if not jogador:
+        raise TopDeckedException.not_found("Jogador nao encontrado")
+    
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+    if file:
+        ext = file.filename.split(".")[-1]
+        file_path = os.path.join(UPLOAD_DIR, f"user_{jogador.id}.{ext}")
+        with open(file_path, "wb") as f:
+            f.write(file.file.read())
+        jogador.usuario.foto = f"user_{jogador.id}.{ext}"
+        session.add(jogador.usuario)
+        session.commit()
+    return jogador

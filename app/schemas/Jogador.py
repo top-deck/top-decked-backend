@@ -23,6 +23,7 @@ class JogadorUpdate(JogadorBase):
     telefone: str | None = None
     email: str | None = None
     data_nascimento: date | None = None
+    
 
 class JogadorCriar(JogadorBase):
     email: str | None = Field(default=None)

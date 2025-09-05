@@ -1,9 +1,10 @@
 from dotenv import load_dotenv
-
+import os
 load_dotenv(override=True)
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -18,6 +19,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+UPLOAD_DIR = "app/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True) 
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 origins = [
     "http://localhost",
