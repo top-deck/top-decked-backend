@@ -41,8 +41,8 @@ class Usuario(UsuarioBase, table=True):
 # ---------------------------------- Jogador ----------------------------------
 class JogadorBase(SQLModel):
     nome: str
-    telefone: str = Field(default=None, max_length=11)
-    data_nascimento: date = Field(default=None)
+    telefone: str = Field(default=None, max_length=11, nullable=True)
+    data_nascimento: date = Field(default=None, nullable=True)
 
 
 class Jogador(JogadorBase, table=True):

@@ -10,6 +10,8 @@ class JogadorPublico(JogadorBase):
     id: int
     usuario: UsuarioPublico | None
     pokemon_id: str | None
+    telefone: str | None
+    data_nascimento: date | None
 
 class JogadorPublicoLoja(JogadorBase):
     id: int

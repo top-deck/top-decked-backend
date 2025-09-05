@@ -130,3 +130,50 @@ def calcular_forca_oponente(session: SessionDep, torneio: Torneio, link: Jogador
         taxas.append(calcular_taxa_vitoria(session, op_jogador))
 
     return sum(taxas) / len(taxas)
+
+def _descobrir_oponente(rodada: Rodada, jogador: str):
+    oponente = "bye"
+    if rodada.jogador1_id == jogador and rodada.jogador2_id:
+        oponente = rodada.jogador2_id
+    elif rodada.jogador2_id == jogador and rodada.jogador1_id:
+        oponente = rodada.jogador1_id
+    
+    return oponente
+
+def _processar_rodada(oponentes_salvos: dict, rodada: Rodada, jogador: str, oponente : str):
+    if rodada.vencedor == oponente:
+        oponentes_salvos[oponente]["derrotas"] += 1
+    elif rodada.vencedor == jogador:
+        oponentes_salvos[oponente]["vitorias"] += 1
+    else:
+        oponentes_salvos[oponente]["empates"] += 1
+    
+    return oponentes_salvos
+    
+
+def retornar_historico_jogador(session: SessionDep, jogador: Jogador):
+    oponentes_salvos = {}
+    
+    rodadas = session.exec(select(Rodada)
+                           .where(Rodada.jogador1_id == jogador.pokemon_id 
+                                  or Rodada.jogador2_id == jogador.pokemon_id))
+    
+    for rodada in rodadas:
+        oponente = _descobrir_oponente(rodada, jogador.pokemon_id)
+        
+        if oponente not in oponentes_salvos:
+            if oponente != "bye":
+                op_jog = session.exec(select(Jogador).where(Jogador.pokemon_id == oponente)).first()
+            historico_op = {
+                "id" : oponente,
+                "nome" : op_jog.nome if oponente != "bye" else oponente,
+                "vitorias" : 0,
+                "derrotas" : 0,
+                "empates" : 0
+            }
+            oponentes_salvos[oponente] = historico_op
+        
+        oponentes_salvos = _processar_rodada(
+            oponentes_salvos, rodada, jogador.pokemon_id, oponente)
+
+    return list(oponentes_salvos.values())
