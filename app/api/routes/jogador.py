@@ -56,6 +56,14 @@ def retornar_historico(session: SessionDep,
 
     return retornar_historico_jogador(session, jogador)
 
+@router.get("/usuario/{usuario_id}", response_model=JogadorPublico)
+def retornar_jogador(usuario_id: int, session: SessionDep):
+    jogador = session.exec(select(Jogador).where(Jogador.usuario_id == usuario_id)).first()
+    if not jogador:
+        raise TopDeckedException.not_found("Jogador nao encontrado")
+    
+    return jogador
+
 @router.get("/{jogador_id}", response_model=JogadorPublico)
 def retornar_jogador(jogador_id: int, session: SessionDep):
     jogador = session.get(Jogador, jogador_id)
@@ -63,6 +71,7 @@ def retornar_jogador(jogador_id: int, session: SessionDep):
         raise TopDeckedException.not_found("Jogador nao encontrado")
     
     return jogador
+
 
 @router.get("/", response_model=list[JogadorPublico])
 def get_jogadores(session : SessionDep): 
