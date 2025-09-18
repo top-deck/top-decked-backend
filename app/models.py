@@ -1,12 +1,14 @@
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import Field, SQLModel, Relationship, Enum, Column
 from typing import List, Optional
 from datetime import date, time
 import uuid
+import enum
 from app.core.db import SessionDep
 from email_validator import validate_email, EmailNotValidError
 from app.core.exception import TopDeckedException
 from sqlmodel import select
 from sqlalchemy import func
+from sqlalchemy import Enum as SAEnum
 from passlib.context import CryptContext
 
 
@@ -16,7 +18,7 @@ class UsuarioBase(SQLModel):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True)
     foto: Optional[str] = Field(default=None, unique=True)
-
+    data_cadastro: date = Field(default=None)
 
 class Usuario(UsuarioBase, table=True):
     tipo: str = Field(index=True)
@@ -95,7 +97,8 @@ class RodadaBase(SQLModel):
     num_rodada: int = Field(default=None)
     mesa: Optional[int] = Field(default=None)
     data_de_inicio: date = Field(default=None)
-
+    finalizada: Optional[bool] = Field(default=False)
+    
 class Rodada(RodadaBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     torneio_id: str = Field(default=None, foreign_key="torneio.id", ondelete="CASCADE")
@@ -119,6 +122,11 @@ class TipoJogador(TipoJogadorBase, table=True):
     
 
 # ---------------------------------- Torneio ----------------------------------
+class StatusTorneio(str, enum.Enum):
+    ABERTO = "ABERTO"
+    EM_ANDAMENTO = "EM_ANDAMENTO"
+    FINALIZADO = "FINALIZADO"
+
 class TorneioBase(SQLModel):
     nome: Optional[str] = Field(default=None, nullable=True)
     descricao: Optional[str] = Field(default=None, nullable=True)
@@ -126,7 +134,6 @@ class TorneioBase(SQLModel):
     estado: Optional[str] = Field(default=None, index=True, nullable=True)
     tempo_por_rodada: int = Field(default=30, index=True)
     data_inicio: date = Field(default=None)
-    finalizado: Optional[bool] = Field(default=False)
     vagas: int = Field(default=0)
     hora: Optional[time] = Field(default=None, nullable=True)
     formato: Optional[str] = Field(default="Desconhecido", nullable=True)
@@ -145,4 +152,5 @@ class Torneio(TorneioBase, table=True):
     rodadas: List["Rodada"] = Relationship(sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     jogadores: List["JogadorTorneioLink"] = Relationship(back_populates="torneio", 
                                                          sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    status: StatusTorneio = Field(sa_column=Column(Enum(StatusTorneio)), default=StatusTorneio.ABERTO)
     regra_basica: Optional["TipoJogador"] = Relationship()

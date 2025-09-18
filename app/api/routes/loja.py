@@ -9,6 +9,7 @@ from app.utils.UsuarioUtil import verificar_novo_usuario
 from app.core.security import TokenData
 from app.dependencies import retornar_loja_atual
 from typing import Annotated
+from datetime import datetime
 
 
 router = APIRouter(
@@ -21,7 +22,8 @@ def criar_loja(loja: LojaCriar, session: SessionDep):
     
     novo_usuario = Usuario(
         email=loja.email,
-        tipo="loja"
+        tipo="loja",
+        data_cadastro=datetime.now()
     )
     novo_usuario.set_senha(loja.senha)
     

@@ -12,6 +12,8 @@ from app.utils.JogadorUtil import calcular_estatisticas, retornar_historico_joga
 from app.dependencies import retornar_jogador_atual
 from typing import Annotated
 import os
+from datetime import datetime
+
 
 router = APIRouter(
     prefix="/jogadores",
@@ -24,7 +26,8 @@ def create_jogador(jogador: JogadorCriar, session: SessionDep):
 
     novo_usuario = Usuario(
         email=jogador.email,
-        tipo="jogador"
+        tipo="jogador",
+        data_cadastro=datetime.now()
     )
     novo_usuario.set_senha(jogador.senha)
     session.add(novo_usuario)

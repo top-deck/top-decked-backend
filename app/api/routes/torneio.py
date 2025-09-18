@@ -1,9 +1,10 @@
 from fastapi import APIRouter, UploadFile, Depends
 from sqlmodel import text
 from typing import Annotated
-from app.utils.TorneioUtil import importar_torneio, retornar_torneio_completo, editar_torneio_regras, calcular_pontuacao
+from app.utils.TorneioUtil import retornar_torneio_completo, editar_torneio_regras, calcular_pontuacao
+from app.utils.ImportacaoUtil import importar_torneio
 from app.schemas.Torneio import TorneioPublico, TorneioAtualizar
-from app.models import Torneio, TorneioBase, JogadorTorneioLink, Jogador
+from app.models import Torneio, TorneioBase, JogadorTorneioLink, Jogador, StatusTorneio
 from app.core.db import SessionDep
 from app.core.exception import TopDeckedException
 from app.core.security import TokenData
@@ -42,13 +43,76 @@ def importar_torneios(session: SessionDep, arquivo: UploadFile, torneio_id: str,
         raise TopDeckedException.not_found("Torneio não existe")
     if not torneio.loja_id == loja.id:
         raise TopDeckedException.forbidden()
-        
-    torneio = importar_torneio(session, arquivo, loja.id, torneio)
+    
+    session.delete(torneio)
+    torneio = importar_torneio(session, arquivo, loja.id)
     session.refresh(torneio)
 
     torneio_completo = retornar_torneio_completo(torneio)
     return torneio_completo
 
+
+@router.patch("/{torneio_id}/iniciar", response_model=TorneioPublico)
+def iniciar_torneio(session: SessionDep, torneio_id: str, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
+    torneio = session.get(Torneio, torneio_id)
+
+    if not torneio:
+        raise TopDeckedException.not_found("Torneio não existe")
+    if not torneio.loja_id == loja.id:
+        raise TopDeckedException.forbidden()
+
+    torneio.status = StatusTorneio.EM_ANDAMENTO
+    session.add(torneio)
+    session.commit()
+    session.refresh(torneio)
+
+    torneio_completo = retornar_torneio_completo(torneio)
+    return torneio_completo
+
+
+@router.patch("/{torneio_id}/finalizar", response_model=TorneioPublico)
+def finalizar_torneio(session: SessionDep, torneio_id: str, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
+    torneio = session.get(Torneio, torneio_id)
+
+    if not torneio:
+        raise TopDeckedException.not_found("Torneio não existe")
+    if not torneio.loja_id == loja.id:
+        raise TopDeckedException.forbidden()
+
+    torneio.status = StatusTorneio.FINALIZADO
+    session.add(torneio)
+    session.commit()
+    session.refresh(torneio)
+
+    torneio_completo = retornar_torneio_completo(torneio)
+    return torneio_completo
+
+
+@router.post("/{torneio_id}/finalizar", response_model=TorneioPublico)
+def importar_torneios(session: SessionDep, torneio_id: str, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
+    torneio = session.get(Torneio, torneio_id)
+
+    if not torneio:
+        raise TopDeckedException.not_found("Torneio não existe")
+    if not torneio.loja_id == loja.id:
+        raise TopDeckedException.forbidden()
+
+    torneio.status = StatusTorneio.FINALIZADO
+    session.refresh(torneio)
+
+    torneio_completo = retornar_torneio_completo(torneio)
+    return torneio_completo
+
+@router.post("/criar",response_model=TorneioPublico)
+def criar_torneio(session:SessionDep, torneio: TorneioBase, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
+    novo_torneio = Torneio(
+        **torneio.model_dump(),
+        loja_id = loja.id,
+    )
+    session.add(novo_torneio)
+    session.commit()
+    session.refresh(novo_torneio)
+    return retornar_torneio_completo(novo_torneio)
 
 @router.put("/{torneio_id}", response_model=TorneioPublico)
 def editar_torneio(session: SessionDep, 
@@ -88,16 +152,6 @@ def deletar_torneios(session: SessionDep, loja: Annotated[TokenData, Depends(ret
     session.exec(text("DELETE FROM torneio"))
     session.commit()
 
-@router.post("/criar",response_model=TorneioPublico)
-def criar_torneio(session:SessionDep, torneio: TorneioBase, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
-    novo_torneio = Torneio(
-        **torneio.model_dump(),
-        loja_id = loja.id,
-    )
-    session.add(novo_torneio)
-    session.commit()
-    session.refresh(novo_torneio)
-    return retornar_torneio_completo(novo_torneio)
 
 @router.get("/", response_model=list[TorneioPublico])
 def get_torneios(session: SessionDep):
@@ -127,7 +181,7 @@ def inscrever_jogador(session: SessionDep, torneio_id: str, token_data: Annotate
     jogador = session.get(Jogador, token_data.id)
     if not torneio:
         raise TopDeckedException.not_found("Torneio não existe")
-    if torneio.finalizado:
+    if torneio.status == StatusTorneio.FINALIZADO:
         raise TopDeckedException.bad_request("Torneio já finalizado")
     if not jogador.pokemon_id:
         raise TopDeckedException.bad_request("Jogador não possui um Pokémon ID vinculado")
@@ -156,7 +210,7 @@ def desinscrever_jogador(session: SessionDep, torneio_id: str, token_data: Annot
 
     if not torneio:
         raise TopDeckedException.not_found("Torneio não existe")
-    if torneio.finalizado:
+    if torneio.status == StatusTorneio.FINALIZADO:
         raise TopDeckedException.bad_request("Torneio já finalizado")
 
     inscricao = session.exec(select(JogadorTorneioLink).where(
