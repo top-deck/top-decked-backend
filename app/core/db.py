@@ -33,9 +33,9 @@ cartas = [
     {"nome": "Air Balloon", "tipo": "Item", "id": "BLK 79"},
     {"nome": "Future Booster Energy Capsule", "tipo": "Item", "id": "TEF 149"},
 
-    {"nome": "Lightning Energy", "tipo": "Energia", "id": ""},
-    {"nome": "Grass Energy", "tipo": "Energia", "id": ""},
-    {"nome": "Metal Energy", "tipo": "Energia", "id": ""},
+    {"nome": "Lightning Energy", "tipo": "Energia", "id": "Lightning Energy"},
+    {"nome": "Grass Energy", "tipo": "Energia", "id": "Grass Energy"},
+    {"nome": "Metal Energy", "tipo": "Energia", "id": "Metal Energy"},
     {"nome": "Dreepy", "tipo": "Pokemon", "id": "TWM 128"},
     {"nome": "Drakloak", "tipo": "Pokemon", "id": "TWM 129"},
     {"nome": "Dragapult ex", "tipo": "Pokemon", "id": "TWM 130"},
