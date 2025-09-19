@@ -199,7 +199,7 @@ def retornar_vde_jogador(session: SessionDep, jogador: JogadorTorneioLink, torne
         if rodada.vencedor == oponente:
             vde["derrotas"] += 1
         elif rodada.vencedor == jogador.jogador_id:
-            vde["vitoria"] += 1
+            vde["vitorias"] += 1
         else:
             vde["empates"] += 1
 
