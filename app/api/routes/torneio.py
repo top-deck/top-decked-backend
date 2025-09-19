@@ -142,9 +142,9 @@ def editar_torneio(session: SessionDep,
     torneio = session.get(Torneio, torneio_id)
     
     if not torneio:
-        TopDeckedException.not_found("Torneio não existe")
+        raise TopDeckedException.not_found("Torneio não existe")
     if not torneio.loja_id == loja.id:
-        TopDeckedException.forbidden()
+        raise TopDeckedException.forbidden()
         
     dados_para_atualizar = torneio_atualizar.model_dump(
             exclude={"regras_adicionais"}, exclude_unset=True)
