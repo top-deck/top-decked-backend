@@ -156,3 +156,6 @@ class Torneio(TorneioBase, table=True):
                                                          sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     status: StatusTorneio = Field(sa_column=Column(Enum(StatusTorneio)), default=StatusTorneio.ABERTO)
     regra_basica: Optional["TipoJogador"] = Relationship()
+    
+    
+# ---------------------------------- Cartas ----------------------------------

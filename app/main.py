@@ -9,12 +9,13 @@ import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
-from app.core.db import create_db_and_tables
+from app.core.db import create_db_and_tables, inserir_cartas
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+    inserir_cartas()
     yield
 
 
