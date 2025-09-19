@@ -6,7 +6,7 @@ from typing import List
 from app.utils.Enums import MesEnum
 from app.utils.TorneioUtil import calcular_taxa_vitoria
 from app.utils.RankingUtil import calcula_ranking_geral
-from datetime import datetime
+from app.utils.datetimeUtil import data_agora_brasil
 
 
 
@@ -25,8 +25,8 @@ def calcular_estatisticas(session: SessionDep, jogador: Jogador):
     torneios_historico = _retornar_estatisticas_torneio(session, jogador, torneios_links)
     taxa_vitoria = calcular_taxa_vitoria(session, jogador)
     rank_geral = posicao_do_jogador(calcula_ranking_geral(session), jogador.pokemon_id)
-    rank_mensal = posicao_do_jogador(calcula_ranking_geral(session, datetime.now().month), jogador.pokemon_id)
-    rank_anual = posicao_do_jogador(calcula_ranking_geral(session, datetime.now().year), jogador.pokemon_id)
+    rank_mensal = posicao_do_jogador(calcula_ranking_geral(session, data_agora_brasil().month), jogador.pokemon_id)
+    rank_anual = posicao_do_jogador(calcula_ranking_geral(session, data_agora_brasil().year), jogador.pokemon_id)
 
     return {"estatisticas_anuais": estat_por_mes, 
             "torneio_totais" : torneio_totais,

@@ -9,11 +9,10 @@ from app.core.security import TokenData
 from app.models import Usuario, Jogador, JogadorTorneioLink
 from app.utils.UsuarioUtil import verificar_novo_usuario
 from app.utils.JogadorUtil import calcular_estatisticas, retornar_historico_jogador
+from app.utils.datetimeUtil import data_agora_brasil
 from app.dependencies import retornar_jogador_atual
 from typing import Annotated
 import os
-from datetime import datetime
-
 
 router = APIRouter(
     prefix="/jogadores",
@@ -27,7 +26,7 @@ def create_jogador(jogador: JogadorCriar, session: SessionDep):
     novo_usuario = Usuario(
         email=jogador.email,
         tipo="jogador",
-        data_cadastro=datetime.now()
+        data_cadastro=data_agora_brasil()
     )
     novo_usuario.set_senha(jogador.senha)
     session.add(novo_usuario)

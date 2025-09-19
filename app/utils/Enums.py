@@ -32,3 +32,9 @@ class MesEnum(str, Enum):
             12: cls.Dezembro.value,
         }
         return mes_map.get(mes, "Desconhecido")
+
+
+class StatusTorneio(str, Enum):
+    ABERTO = "ABERTO"
+    EM_ANDAMENTO = "EM_ANDAMENTO"
+    FINALIZADO = "FINALIZADO"

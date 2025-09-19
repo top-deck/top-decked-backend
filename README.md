@@ -9,6 +9,7 @@ Passo a passo de como instalar e executar o sistema.
 ### **1️⃣Instalação do Postgres pelo Docker** 
 
 [Link](https://felixgilioli.medium.com/como-rodar-um-banco-de-dados-postgres-com-docker-6aecf67995e1)
+docker run -d -p 5433:5432 -e POSTGRES_PASSWORD=1234 -e POSTGRES_USER=postgres -e TZ=America/Fortaleza postgres
 
 ### **2️⃣ Clonar o repositório**  
 ```sh

@@ -1,9 +1,9 @@
 from sqlmodel import select
 from fastapi import UploadFile
 import xml.etree.ElementTree as ET
-from datetime import datetime
 from app.core.exception import TopDeckedException
 from app.core.db import SessionDep
+from app.utils.datetimeUtil import parse_data, parse_datetime
 from app.models import Rodada, Torneio, Jogador, JogadorTorneioLink, StatusTorneio
 
 
@@ -50,11 +50,7 @@ def _importar_metadados(xml: ET.Element, loja_id: int):
         raise TopDeckedException.bad_request(
             "Cidade ou data de início ausentes")
 
-    try:
-        data_inicio = datetime.strptime(data_inicio_str, "%m/%d/%Y").date()
-    except ValueError:
-        raise TopDeckedException.bad_request(
-            "Data de início em formato inválido")
+    data_inicio = parse_data(data_inicio_str)
     descricao = f"{nome} {data_inicio}"
 
     return Torneio(id=id,
@@ -144,12 +140,7 @@ def _importar_partidas(partidas: ET.Element, torneio_id: str, num_rodada: int, s
         mesa = int(partida.findtext("tablenumber"))
 
         timestamp_str = partida.findtext("timestamp")
-        try:
-            data_de_inicio = datetime.strptime(
-                timestamp_str, "%d/%m/%Y %H:%M:%S").date()
-        except ValueError:
-            raise TopDeckedException.bad_request(
-                "Data no formato inválido: {timestamp_str}")
+        data_inicio = parse_datetime(timestamp_str)
 
         partida = Rodada(
             jogador1_id=jogador1_id,
@@ -158,7 +149,7 @@ def _importar_partidas(partidas: ET.Element, torneio_id: str, num_rodada: int, s
             torneio_id=torneio_id,
             num_rodada=num_rodada,
             mesa=mesa,
-            data_de_inicio=data_de_inicio,
+            data_de_inicio=data_inicio,
             finalizada=True
         )
         session.add(partida)

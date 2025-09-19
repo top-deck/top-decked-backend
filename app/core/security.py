@@ -11,6 +11,7 @@ from sqlmodel import select
 from app.models import Usuario
 from app.core.db import SessionDep, get_session
 from app.core.exception import TopDeckedException
+from app.utils.datetimeUtil import agora_brasil
 from fastapi.security import OAuth2PasswordBearer
 
 import os
@@ -60,9 +61,9 @@ def autenticar(email: str, forms_senha: str, session: SessionDep) -> Usuario | N
 def criar_token_de_acesso(dados: dict, delta_expiracao: timedelta | None = None):
     criptografar = dados.copy()
     if delta_expiracao:
-        expiracao = datetime.now(timezone.utc) + delta_expiracao
+        expiracao = agora_brasil() + delta_expiracao
     else:
-        expiracao = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expiracao = agora_brasil() + timedelta(minutes=15)
     criptografar.update({"exp": expiracao})
     encoded_jwt = jwt.encode(criptografar, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

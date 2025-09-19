@@ -6,6 +6,7 @@ from app.models import Loja
 from app.models import Usuario
 from sqlmodel import select
 from app.utils.UsuarioUtil import verificar_novo_usuario
+from app.utils.datetimeUtil import data_agora_brasil
 from app.core.security import TokenData
 from app.dependencies import retornar_loja_atual
 from typing import Annotated
@@ -24,7 +25,7 @@ def criar_loja(loja: LojaCriar, session: SessionDep):
     novo_usuario = Usuario(
         email=loja.email,
         tipo="loja",
-        data_cadastro=datetime.now()
+        data_cadastro=data_agora_brasil()
     )
     novo_usuario.set_senha(loja.senha)
     

@@ -1,16 +1,16 @@
-from sqlmodel import Field, SQLModel, Relationship, Enum, Column
+from sqlmodel import Field, SQLModel, Relationship, Enum, Column, DateTime
 from typing import List, Optional
-from datetime import date, time
 import uuid
-import enum
+from datetime import datetime
 from app.core.db import SessionDep
+from app.utils.datetimeUtil import data_agora_brasil
+from app.utils.Enums import StatusTorneio
 from email_validator import validate_email, EmailNotValidError
 from app.core.exception import TopDeckedException
 from sqlmodel import select
 from sqlalchemy import func
-from sqlalchemy import Enum as SAEnum
 from passlib.context import CryptContext
-
+from datetime import date, time
 
 PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # ---------------------------------- Usuario ----------------------------------
@@ -18,7 +18,10 @@ class UsuarioBase(SQLModel):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True)
     foto: Optional[str] = Field(default=None, unique=True)
-    data_cadastro: date = Field(default=None)
+    data_cadastro: date = Field(sa_column=Column(DateTime(timezone=True),
+            nullable=False, default=data_agora_brasil()
+        )
+    )
 
 class Usuario(UsuarioBase, table=True):
     tipo: str = Field(index=True)
@@ -44,7 +47,7 @@ class Usuario(UsuarioBase, table=True):
 class JogadorBase(SQLModel):
     nome: str
     telefone: str = Field(default=None, max_length=11, nullable=True)
-    data_nascimento: date = Field(default=None, nullable=True)
+    data_nascimento: date = Field(sa_column=Column(DateTime(timezone=True), nullable=True, default=None))
 
 
 class Jogador(JogadorBase, table=True):
@@ -96,7 +99,7 @@ class RodadaBase(SQLModel):
         default=None, foreign_key="jogador.pokemon_id", nullable=True)
     num_rodada: int = Field(default=None)
     mesa: Optional[int] = Field(default=None)
-    data_de_inicio: date = Field(default=None)
+    data_de_inicio: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=True), default=None)
     finalizada: Optional[bool] = Field(default=False)
     
 class Rodada(RodadaBase, table=True):
@@ -122,10 +125,7 @@ class TipoJogador(TipoJogadorBase, table=True):
     
 
 # ---------------------------------- Torneio ----------------------------------
-class StatusTorneio(str, enum.Enum):
-    ABERTO = "ABERTO"
-    EM_ANDAMENTO = "EM_ANDAMENTO"
-    FINALIZADO = "FINALIZADO"
+
 
 class TorneioBase(SQLModel):
     nome: Optional[str] = Field(default=None, nullable=True)
@@ -133,7 +133,7 @@ class TorneioBase(SQLModel):
     cidade: Optional[str] = Field(default=None, index=True, nullable=True)
     estado: Optional[str] = Field(default=None, index=True, nullable=True)
     tempo_por_rodada: int = Field(default=30, index=True)
-    data_inicio: date = Field(default=None)
+    data_inicio: date = Field(sa_column=Column(DateTime(timezone=True), nullable=False), default=None)
     vagas: int = Field(default=0)
     hora: Optional[time] = Field(default=None, nullable=True)
     formato: Optional[str] = Field(default="Desconhecido", nullable=True)

@@ -1,8 +1,9 @@
 from app.core.db import SessionDep
 from app.models import Torneio, Rodada, JogadorTorneioLink, Jogador
 from sqlmodel import select
-from datetime import datetime
 from app.utils.JogadorUtil import retornar_vde_jogador
+from app.utils.datetimeUtil import data_agora_brasil
+
 
 def nova_rodada(session: SessionDep, torneio: Torneio):
     jogadores = session.exec(select(JogadorTorneioLink)
@@ -46,7 +47,7 @@ def nova_rodada(session: SessionDep, torneio: Torneio):
             torneio_id=torneio.id,
             num_rodada=rodada_atual,
             mesa=mesa_livre,
-            data_de_inicio=datetime.now(),
+            data_de_inicio=data_agora_brasil(),
             finalizada=False
         )
         session.add(nova_rodada)
