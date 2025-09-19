@@ -47,7 +47,9 @@ def calcula_ranking_geral(session: SessionDep, mes = None, ano = None):
                     total_derrotas += 1
                 else:
                     total_empates += 1
-
+        if total_pontos == 0:
+                continue
+        
         ranking.append(Ranking(
             jogador_id=jogador.pokemon_id,
             nome_jogador=jogador.nome,
@@ -104,6 +106,10 @@ def calcula_ranking_geral_por_loja(session: SessionDep, mes: int = None):
                         total_derrotas += 1
                     else:
                         total_empates += 1
+
+            if total_pontos == 0:
+                continue
+
             total_rodadas = total_vitorias + total_derrotas + total_empates
             taxa_vitoria = int((total_vitorias / total_rodadas) * 100) if total_rodadas > 0 else 0
 
