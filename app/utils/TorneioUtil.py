@@ -1,6 +1,6 @@
 from sqlmodel import select
 from app.core.db import SessionDep
-from app.models import Rodada, Torneio, Jogador, JogadorTorneioLink
+from app.models import Rodada, Torneio, Jogador, JogadorTorneioLink, TipoJogador
 
 
 def retornar_torneio_completo(torneio: Torneio):
@@ -53,66 +53,7 @@ def calcular_pontuacao(session: SessionDep, torneio: Torneio):
     regra_basica = torneio.regra_basica
     
     for rodada in torneio.rodadas:
-        jogador1_id = rodada.jogador1_id
-        jogador2_id = rodada.jogador2_id
-        jogador1_link = session.get(JogadorTorneioLink, {"torneio_id": torneio.id,
-                                                          "jogador_id": jogador1_id})
-        jogador2_link = session.get(JogadorTorneioLink, {"torneio_id": torneio.id,
-                                                          "jogador_id": jogador2_id})
-        jogador1_tipo = jogador1_link.tipo_jogador
-        jogador2_tipo = jogador2_link.tipo_jogador
-
-        if rodada.vencedor == jogador1_id:
-            # Jogador 1 ganha os pontos por vitória 
-            # e os pontos da regra de derrota do oponente
-            jogador1_link.pontuacao_com_regras += (jogador1_tipo.pt_vitoria 
-                                                + jogador2_tipo.pt_oponente_ganha)
-            # Jogador 2 ganha os pontos por derrota 
-            # e os pontos da regra de vitória do oponente (possivelmente negativos)
-            jogador2_link.pontuacao_com_regras += (jogador2_tipo.pt_derrota
-                                                + jogador1_tipo.pt_oponente_perde)
-
-            jogador1_link.pontuacao += (regra_basica.pt_vitoria
-                                           + regra_basica.pt_oponente_ganha)
-            
-            jogador2_link.pontuacao += (regra_basica.pt_derrota
-                                            + regra_basica.pt_oponente_perde)
-            
-        elif rodada.vencedor == jogador2_id:
-            # Jogador 2 ganha os pontos por vitória
-            # e os pontos da regra de derrota do oponente
-            jogador2_link.pontuacao_com_regras += (jogador2_tipo.pt_vitoria
-                                        + jogador1_tipo.pt_oponente_ganha)
-            # Jogador 1 ganha os pontos por derrota
-            # e os pontos da regra de vitória do oponente (possivelmente negativos)
-            jogador1_link.pontuacao_com_regras += (jogador1_tipo.pt_derrota
-                                                + jogador2_tipo.pt_oponente_perde)
-            
-            jogador2_link.pontuacao += (regra_basica.pt_vitoria
-                                                   + regra_basica.pt_oponente_ganha)
-            
-            jogador1_link.pontuacao += (regra_basica.pt_derrota
-                                        + regra_basica.pt_oponente_perde)
-        else:
-            # Jogador 1 ganha os pontos por empate
-            # e os pontos da regra de empate do oponente
-            jogador1_link.pontuacao_com_regras += (jogador1_tipo.pt_empate
-                                                + jogador2_tipo.pt_oponente_empate)
-            # Jogador 2 ganha os pontos por empate
-            # e os pontos da regra de empate do oponente
-            jogador2_link.pontuacao_com_regras += (jogador2_tipo.pt_empate
-                                                + jogador1_tipo.pt_oponente_empate)
-            
-            jogador1_link.pontuacao += (regra_basica.pt_empate
-                                        + regra_basica.pt_oponente_empate)
-            
-            jogador2_link.pontuacao += (regra_basica.pt_empate
-                                        + regra_basica.pt_oponente_empate)
-            
-    jogador1_link.pontuacao_com_regras += torneio.pontuacao_de_participacao
-    jogador2_link.pontuacao_com_regras += torneio.pontuacao_de_participacao
-    session.add(jogador1_link)
-    session.add(jogador2_link)
+        calcular_pontuacao_rodada(session,rodada,regra_basica)
     
 def calcular_taxa_vitoria(session: SessionDep, jogador: Jogador):
     vitorias, derrotas, empates = 0, 0, 0
@@ -130,3 +71,82 @@ def calcular_taxa_vitoria(session: SessionDep, jogador: Jogador):
             
     total = vitorias + derrotas + empates
     return int((vitorias / total) * 100) if total > 0 else 0
+
+def calcular_pontuacao_rodada(session: SessionDep, rodada: Rodada, regra_basica: TipoJogador):
+    jogador1_id = rodada.jogador1_id
+    jogador2_id = rodada.jogador2_id
+    jogador1_link = session.get(JogadorTorneioLink, {"torneio_id": rodada.torneio_id,
+                                                        "jogador_id": jogador1_id})
+    jogador2_link = session.get(JogadorTorneioLink, {"torneio_id": rodada.torneio_id,
+                                                        "jogador_id": jogador2_id})
+    jogador1_tipo = jogador1_link.tipo_jogador
+    jogador2_tipo = jogador2_link.tipo_jogador
+
+    if rodada.vencedor == jogador1_id:
+        # Jogador 1 ganha os pontos por vitória 
+        # e os pontos da regra de derrota do oponente
+        jogador1_link.pontuacao_com_regras += (jogador1_tipo.pt_vitoria 
+                                            + jogador2_tipo.pt_oponente_ganha)
+        # Jogador 2 ganha os pontos por derrota 
+        # e os pontos da regra de vitória do oponente (possivelmente negativos)
+        jogador2_link.pontuacao_com_regras += (jogador2_tipo.pt_derrota
+                                            + jogador1_tipo.pt_oponente_perde)
+
+        jogador1_link.pontuacao += (regra_basica.pt_vitoria
+                                        + regra_basica.pt_oponente_ganha)
+        
+        jogador2_link.pontuacao += (regra_basica.pt_derrota
+                                        + regra_basica.pt_oponente_perde)
+        
+    elif rodada.vencedor == jogador2_id:
+        # Jogador 2 ganha os pontos por vitória
+        # e os pontos da regra de derrota do oponente
+        jogador2_link.pontuacao_com_regras += (jogador2_tipo.pt_vitoria
+                                    + jogador1_tipo.pt_oponente_ganha)
+        # Jogador 1 ganha os pontos por derrota
+        # e os pontos da regra de vitória do oponente (possivelmente negativos)
+        jogador1_link.pontuacao_com_regras += (jogador1_tipo.pt_derrota
+                                            + jogador2_tipo.pt_oponente_perde)
+        
+        jogador2_link.pontuacao += (regra_basica.pt_vitoria
+                                                + regra_basica.pt_oponente_ganha)
+        
+        jogador1_link.pontuacao += (regra_basica.pt_derrota
+                                    + regra_basica.pt_oponente_perde)
+    else:
+        # Jogador 1 ganha os pontos por empate
+        # e os pontos da regra de empate do oponente
+        jogador1_link.pontuacao_com_regras += (jogador1_tipo.pt_empate
+                                            + jogador2_tipo.pt_oponente_empate)
+        # Jogador 2 ganha os pontos por empate
+        # e os pontos da regra de empate do oponente
+        jogador2_link.pontuacao_com_regras += (jogador2_tipo.pt_empate
+                                            + jogador1_tipo.pt_oponente_empate)
+        
+        jogador1_link.pontuacao += (regra_basica.pt_empate
+                                    + regra_basica.pt_oponente_empate)
+        
+        jogador2_link.pontuacao += (regra_basica.pt_empate
+                                    + regra_basica.pt_oponente_empate)
+    
+    session.add(jogador1_link)
+    session.add(jogador2_link)
+
+def get_torneio_top(session: SessionDep, torneio_id: str):
+    jogadores = session.exec(
+        select(JogadorTorneioLink)
+        .where(JogadorTorneioLink.torneio_id == torneio_id)
+        .order_by(JogadorTorneioLink.pontuacao.desc())
+    ).all()
+
+    ranking = []
+    for posicao, jt in enumerate(jogadores, start=1):
+        jogador = session.get(Jogador, jt.jogador_id)
+        ranking.append({
+            "posicao": posicao,
+            "jogador_nome": jogador.nome if jogador else None,
+            "pontuacao": jt.pontuacao,
+            "pontuacao_com_regras": jt.pontuacao_com_regras
+        })
+
+    return ranking
