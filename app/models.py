@@ -8,7 +8,7 @@ from app.utils.Enums import StatusTorneio
 from email_validator import validate_email, EmailNotValidError
 from app.core.exception import TopDeckedException
 from sqlmodel import select
-from sqlalchemy import func
+from sqlalchemy import JSON, func
 from passlib.context import CryptContext
 from datetime import date, time
 
@@ -67,6 +67,9 @@ class JogadorTorneioLinkBase(SQLModel):
         default=None, foreign_key="tipojogador.id")
     pontuacao: float = Field(default=0)
     pontuacao_com_regras: float = Field(default=0)
+    deck: Optional[List[str]] = Field(default=None, sa_column=Column(JSON))
+
+
 
 class JogadorTorneioLink(JogadorTorneioLinkBase, table=True):
     torneio_id: str | None = Field(
@@ -156,6 +159,3 @@ class Torneio(TorneioBase, table=True):
                                                          sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     status: StatusTorneio = Field(sa_column=Column(Enum(StatusTorneio)), default=StatusTorneio.ABERTO)
     regra_basica: Optional["TipoJogador"] = Relationship()
-    
-    
-# ---------------------------------- Cartas ----------------------------------

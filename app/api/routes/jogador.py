@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, UploadFile, File
+import json
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlmodel import select
 from app.schemas.Jogador import JogadorPublico, JogadorUpdate, JogadorCriar
-from app.core.db import SessionDep
-from typing import Annotated
+from app.core.db import SessionDep, Carta
+from typing import Annotated, List
 from app.core.security import TokenData
 from app.core.exception import TopDeckedException
 from app.core.security import TokenData
@@ -43,6 +45,13 @@ def create_jogador(jogador: JogadorCriar, session: SessionDep):
     session.commit()
     session.refresh(db_jogador)
     return db_jogador
+
+@router.get("/cartas", response_model=List[Carta])
+def listar_cartas(session: SessionDep):
+    cartas = session.exec(select(Carta)).all()
+    if not cartas:
+        raise HTTPException(status_code=404, detail="Nenhuma carta encontrada")
+    return cartas
 
 @router.get("/estatisticas")
 def get_estatisticas(session: SessionDep,
@@ -165,3 +174,48 @@ def update_foto(session: SessionDep,
         session.add(jogador.usuario)
         session.commit()
     return jogador
+
+@router.put("/{jogador_id}/deck")
+def adicionar_deck(
+    session: SessionDep,
+    jogador_id,
+    torneio_id: str,
+    cartas: list[dict]):
+    jogador = session.get(Jogador, jogador_id)
+
+    link = session.exec(
+        select(JogadorTorneioLink)
+        .where(JogadorTorneioLink.jogador_id == jogador.pokemon_id,
+               JogadorTorneioLink.torneio_id == torneio_id)
+    ).first()
+
+    if not link:
+        raise HTTPException(status_code=404, detail="Jogador não inscrito nesse torneio")
+
+    deck_atual = link.deck or []
+
+    total_novo = sum(c['quantidade'] for c in cartas)
+    total_atual = sum(c['quantidade'] for c in deck_atual)
+    if total_novo + total_atual > 60:
+        raise HTTPException(status_code=400, detail="O deck não pode ter mais que 60 cartas no total")
+
+    for c in cartas:
+        if c['quantidade'] > 4:
+            raise HTTPException(status_code=400, detail=f"A carta {c['id_carta']} não pode ter mais que 4 cópias")
+        existing = next((x for x in deck_atual if x['id_carta'] == c['id_carta']), None)
+        if existing and existing['quantidade'] + c['quantidade'] > 4:
+            raise HTTPException(status_code=400, detail=f"A carta {c['id_carta']} não pode ter mais que 4 cópias no deck")
+
+    for c in cartas:
+        existing = next((x for x in deck_atual if x['id_carta'] == c['id_carta']), None)
+        if existing:
+            existing['quantidade'] += c['quantidade']
+        else:
+            deck_atual.append(c)
+
+    link.deck = deck_atual
+    session.add(link)
+    session.commit()
+    session.refresh(link)
+
+    return {"msg": "Deck atualizado com sucesso", "deck": link.deck}
