@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File
 from app.core.db import SessionDep
 from app.core.exception import TopDeckedException
 from app.schemas.Loja import LojaCriar, LojaPublico, LojaAtualizar
@@ -9,6 +9,7 @@ from app.utils.UsuarioUtil import verificar_novo_usuario
 from app.core.security import TokenData
 from app.dependencies import retornar_loja_atual
 from typing import Annotated
+import os
 from datetime import datetime
 
 
@@ -90,3 +91,35 @@ def apagar_loja(loja_id: int, session: SessionDep):
     session.delete(loja)
     session.commit()
     return {"ok": True}
+
+@router.post("/upload_foto", response_model=LojaPublico)
+def update_foto(session: SessionDep, 
+                token_data : Annotated[TokenData, Depends(retornar_loja_atual)],
+                file: UploadFile = File(None)):
+    
+    loja = session.get(Loja, token_data.id)
+    
+    if not loja:
+        raise TopDeckedException.not_found("Loja nao encontrado")
+    
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+    if file:
+        ext = file.filename.split(".")[-1]
+        file_path = os.path.join(UPLOAD_DIR, f"user_{loja.usuario.id}.{ext}")
+        with open(file_path, "wb") as f:
+            f.write(file.file.read())
+        loja.usuario.foto = f"user_{loja.usuario.id}.{ext}"
+        session.add(loja.usuario)
+        session.commit()
+    return loja
+
+@router.get("/usuario/{usuario_id}", response_model=LojaPublico)
+def retornar_jogador_pelo_usuario(usuario_id: int, session: SessionDep):
+    jogador = session.exec(select(Loja).where(Loja.usuario_id == usuario_id)).first()
+    if not jogador:
+        raise TopDeckedException.not_found("Loja nao encontrado")
+    
+    return jogador  

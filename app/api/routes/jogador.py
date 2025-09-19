@@ -159,10 +159,10 @@ def update_foto(session: SessionDep,
 
     if file:
         ext = file.filename.split(".")[-1]
-        file_path = os.path.join(UPLOAD_DIR, f"user_{jogador.id}.{ext}")
+        file_path = os.path.join(UPLOAD_DIR, f"user_{jogador.usuario.id}.{ext}")
         with open(file_path, "wb") as f:
             f.write(file.file.read())
-        jogador.usuario.foto = f"user_{jogador.id}.{ext}"
+        jogador.usuario.foto = f"user_{jogador.usuario.id}.{ext}"
         session.add(jogador.usuario)
         session.commit()
     return jogador
