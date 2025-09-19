@@ -15,6 +15,7 @@ class TorneioAtualizar(TorneioBase):
     vagas: int | None = None
     hora: time | None = None
     formato: str | None = None
+    tipo: str | None = None
     taxa: float | None = None
     premio: str | None = None
     n_rodadadas: int | None = None

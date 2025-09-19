@@ -137,6 +137,7 @@ class TorneioBase(SQLModel):
     vagas: int = Field(default=0)
     hora: Optional[time] = Field(default=None, nullable=True)
     formato: Optional[str] = Field(default="Desconhecido", nullable=True)
+    tipo: Optional[str] = Field(default="Desconhecido", nullable=True)
     taxa: float = Field(default=0)
     premio: Optional[str] = Field(default=None, nullable=True)
     n_rodadadas: int = Field(default=0)
