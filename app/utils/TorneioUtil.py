@@ -11,6 +11,7 @@ def retornar_torneio_completo(session: SessionDep, torneio: Torneio):
         colocacao = colocacao_jogador(session, torneio, link.jogador)
         torneio_dict["jogadores"] = [
             {
+                "usuario_id": link.jogador.usuario_id,
                 "jogador_id": link.jogador_id,
                 "nome": link.jogador.nome,
                 "colocacao" : colocacao,
