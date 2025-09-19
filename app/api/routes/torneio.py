@@ -11,7 +11,7 @@ from app.core.exception import TopDeckedException
 from app.core.security import TokenData
 from app.dependencies import retornar_loja_atual, retornar_jogador_atual, retornar_usuario_atual
 from sqlmodel import select
-from typing import Optional, Dict
+from typing import Dict
 
 
 router = APIRouter(
