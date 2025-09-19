@@ -164,6 +164,7 @@ def retornar_historico_jogador(session: SessionDep, jogador: Jogador):
         if oponente not in oponentes_salvos:
             if oponente != "bye":
                 op_jog = session.exec(select(Jogador).where(Jogador.pokemon_id == oponente)).first()
+            
             historico_op = {
                 "id" : oponente,
                 "nome" : op_jog.nome if oponente != "bye" else oponente,
@@ -177,3 +178,29 @@ def retornar_historico_jogador(session: SessionDep, jogador: Jogador):
             oponentes_salvos, rodada, jogador.pokemon_id, oponente)
 
     return list(oponentes_salvos.values())
+
+
+def retornar_vde_jogador(session: SessionDep, jogador: JogadorTorneioLink, torneio: Torneio):
+    rodadas = session.exec(select(Rodada)
+                           .where((Rodada.jogador1_id == jogador.jogador_id
+                                  or Rodada.jogador2_id == jogador.jogador_id)
+                                  and Rodada.torneio_id == torneio.id))
+    vde = {
+        "vitorias": 0,
+        "derrotas": 0,
+        "empates": 0
+    }
+    for rodada in rodadas:
+        if not rodada.finalizada:
+            continue
+        
+        oponente = _descobrir_oponente(rodada, jogador.jogador_id)
+
+        if rodada.vencedor == oponente:
+            vde["derrotas"] += 1
+        elif rodada.vencedor == jogador.jogador_id:
+            vde["vitoria"] += 1
+        else:
+            vde["empates"] += 1
+
+    return vde

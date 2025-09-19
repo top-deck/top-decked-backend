@@ -3,6 +3,7 @@ from sqlmodel import text
 from typing import Annotated
 from app.utils.TorneioUtil import retornar_torneio_completo, editar_torneio_regras, calcular_pontuacao
 from app.utils.ImportacaoUtil import importar_torneio
+from app.utils.RodadaUtil import nova_rodada
 from app.schemas.Torneio import TorneioPublico, TorneioAtualizar
 from app.models import Torneio, TorneioBase, JogadorTorneioLink, Jogador, StatusTorneio
 from app.core.db import SessionDep
@@ -88,20 +89,21 @@ def finalizar_torneio(session: SessionDep, torneio_id: str, loja: Annotated[Toke
     return torneio_completo
 
 
-@router.post("/{torneio_id}/finalizar", response_model=TorneioPublico)
-def importar_torneios(session: SessionDep, torneio_id: str, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
+@router.post("/{torneio_id}/rodada")
+def proxima_rodada(session: SessionDep, torneio_id: str, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):
     torneio = session.get(Torneio, torneio_id)
 
     if not torneio:
         raise TopDeckedException.not_found("Torneio não existe")
     if not torneio.loja_id == loja.id:
         raise TopDeckedException.forbidden()
-
-    torneio.status = StatusTorneio.FINALIZADO
-    session.refresh(torneio)
-
-    torneio_completo = retornar_torneio_completo(torneio)
-    return torneio_completo
+    if not torneio.status == StatusTorneio.EM_ANDAMENTO:
+        raise TopDeckedException.bad_request("Torneio Não foi iniciado")
+    
+    rodada = nova_rodada(session, torneio)
+    
+    session.commit()
+    return rodada
 
 @router.post("/criar",response_model=TorneioPublico)
 def criar_torneio(session:SessionDep, torneio: TorneioBase, loja: Annotated[TokenData, Depends(retornar_loja_atual)]):

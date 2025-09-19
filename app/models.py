@@ -90,8 +90,8 @@ class Loja(LojaBase, table=True):
 
 # ---------------------------------- Rodada ----------------------------------
 class RodadaBase(SQLModel):
-    jogador1_id: str = Field(default=None, foreign_key="jogador.pokemon_id")
-    jogador2_id: str = Field(default=None, foreign_key="jogador.pokemon_id")
+    jogador1_id: Optional[str] = Field(default=None, foreign_key="jogador.pokemon_id", nullable=True)
+    jogador2_id: Optional[str] = Field(default=None, foreign_key="jogador.pokemon_id", nullable=True)
     vencedor: Optional[str] = Field(
         default=None, foreign_key="jogador.pokemon_id", nullable=True)
     num_rodada: int = Field(default=None)
@@ -140,6 +140,7 @@ class TorneioBase(SQLModel):
     taxa: float = Field(default=0)
     premio: Optional[str] = Field(default=None, nullable=True)
     n_rodadadas: int = Field(default=0)
+    rodada_atual: int = Field(default=0)
     regra_basica_id: Optional[int] = Field(
         default=None, foreign_key="tipojogador.id", nullable=True)
     pontuacao_de_participacao: int = Field(default=0)
