@@ -1,21 +1,28 @@
 from sqlmodel import select
 from app.core.db import SessionDep
 from app.models import Rodada, Torneio, Jogador, JogadorTorneioLink, TipoJogador
+from app.utils.JogadorUtil import colocacao_jogador
 
-
-def retornar_torneio_completo(torneio: Torneio):
+def retornar_torneio_completo(session: SessionDep, torneio: Torneio):
     torneio_dict = torneio.model_dump()
     
     torneio_dict["loja"] = torneio.loja
-    torneio_dict["jogadores"] = [
-        {
-            "jogador_id": link.jogador_id,
-            "nome": link.jogador.nome,
-            "tipo_jogador_id": link.tipo_jogador_id,
-            "pontuacao": link.pontuacao
-        }
-        for link in torneio.jogadores
-    ]
+    for link in torneio.jogadores:
+        colocacao = colocacao_jogador(session, torneio, link.jogador)
+        torneio_dict["jogadores"] = [
+            {
+                "jogador_id": link.jogador_id,
+                "nome": link.jogador.nome,
+                "colocacao" : colocacao,
+                "tipo_jogador_id": link.tipo_jogador_id,
+                "pontuacao": link.pontuacao,
+                "pontuacao_com_regras": link.pontuacao_com_regras
+            }
+        ]
+    torneio_dict["jogadores"] = sorted(
+        torneio_dict.get("jogadores", []),
+        key=lambda jogador: jogador["colocacao"]
+    )
 
     torneio_dict["rodadas"] = [
         {
@@ -33,19 +40,19 @@ def retornar_torneio_completo(torneio: Torneio):
     return torneio_dict
 
 
-def editar_torneio_regras(torneio: Torneio, regra_basica: int, regras_adicionais: dict):
+def editar_torneio_regras(session: SessionDep, torneio: Torneio, regra_basica: int, regras_adicionais: dict):
     torneio.regra_basica_id = regra_basica
     
     for jogador in torneio.jogadores:
         jogador.pontuacao = 0
-        jogador.pontuacao_com_regras = 0
+        jogador.pontuacao_com_regras = torneio.pontuacao_de_participacao
         jogador_id = jogador.jogador_id
         
         if regras_adicionais and jogador_id in regras_adicionais:
             jogador.tipo_jogador_id = regras_adicionais[jogador_id]
         else:
             jogador.tipo_jogador_id = regra_basica
-    
+        session.add(jogador)
     return torneio
 
 
@@ -54,23 +61,6 @@ def calcular_pontuacao(session: SessionDep, torneio: Torneio):
     
     for rodada in torneio.rodadas:
         calcular_pontuacao_rodada(session,rodada,regra_basica)
-    
-def calcular_taxa_vitoria(session: SessionDep, jogador: Jogador):
-    vitorias, derrotas, empates = 0, 0, 0
-    
-    rodadas = session.exec(select(Rodada).where(
-                ((Rodada.jogador1_id == jogador.pokemon_id) | (Rodada.jogador2_id == jogador.pokemon_id))))
-
-    for rodada in rodadas:
-        if(rodada.vencedor == jogador.pokemon_id):
-            vitorias += 1
-        elif(rodada.vencedor is not None):
-            derrotas += 1
-        else:
-            empates += 1
-            
-    total = vitorias + derrotas + empates
-    return int((vitorias / total) * 100) if total > 0 else 0
 
 def calcular_pontuacao_rodada(session: SessionDep, rodada: Rodada, regra_basica: TipoJogador):
     jogador1_id = rodada.jogador1_id

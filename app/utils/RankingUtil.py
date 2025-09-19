@@ -1,9 +1,7 @@
 from app.core.db import SessionDep
 from app.schemas.Ranking import Ranking, RankingPorLoja, RankingPorFormato
 from sqlmodel import select, extract
-from sqlalchemy.orm import joinedload, selectinload
 from app.models import Jogador, JogadorTorneioLink, Rodada, Loja, Torneio
-from app.utils.TorneioUtil import calcular_taxa_vitoria
 from collections import defaultdict
 
 
@@ -168,3 +166,20 @@ def desempenho_por_formato(session: SessionDep, jogador: Jogador) -> list[Rankin
         ))
 
     return ranking
+
+def calcular_taxa_vitoria(session: SessionDep, jogador: Jogador):
+    vitorias, derrotas, empates = 0, 0, 0
+
+    rodadas = session.exec(select(Rodada).where(
+        ((Rodada.jogador1_id == jogador.pokemon_id) | (Rodada.jogador2_id == jogador.pokemon_id))))
+
+    for rodada in rodadas:
+        if (rodada.vencedor == jogador.pokemon_id):
+            vitorias += 1
+        elif (rodada.vencedor is not None):
+            derrotas += 1
+        else:
+            empates += 1
+
+    total = vitorias + derrotas + empates
+    return int((vitorias / total) * 100) if total > 0 else 0

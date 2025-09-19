@@ -4,8 +4,7 @@ from app.models import Jogador, JogadorTorneioLink, Torneio, Rodada
 from sqlmodel import select
 from typing import List
 from app.utils.Enums import MesEnum
-from app.utils.TorneioUtil import calcular_taxa_vitoria
-from app.utils.RankingUtil import calcula_ranking_geral
+from app.utils.RankingUtil import calcula_ranking_geral, calcular_taxa_vitoria
 from app.utils.datetimeUtil import data_agora_brasil
 
 
