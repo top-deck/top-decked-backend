@@ -52,16 +52,17 @@ def _importar_metadados(xml: ET.Element, loja_id: int):
 
     data_inicio = parse_data(data_inicio_str)
     descricao = f"{nome} {data_inicio}"
-
-    return Torneio(id=id,
-                   nome=nome,
-                   descricao=descricao,
-                   cidade=cidade,
-                   estado=estado,
-                   tempo_por_rodada=tempo_por_rodada,
-                   data_inicio=data_inicio,
-                   loja_id=loja_id,
-                   status=StatusTorneio.FINALIZADO)
+    novo_torneio = Torneio(nome=nome,
+                           descricao=descricao,
+                           cidade=cidade,
+                           estado=estado,
+                           tempo_por_rodada=tempo_por_rodada,
+                           data_inicio=data_inicio,
+                           loja_id=loja_id,
+                           status=StatusTorneio.FINALIZADO)
+    if id.strip() != "":
+        novo_torneio.id = id
+    return novo_torneio
 
 
 def _importar_jogadores(xml: ET.Element, session: SessionDep):
@@ -123,19 +124,22 @@ def _importar_rodadas(xml: ET.Element, torneio_id: str, session: SessionDep):
 def _importar_partidas(partidas: ET.Element, torneio_id: str, num_rodada: int, session: SessionDep):
     partidas_criadas = []
     for partida in partidas.findall("match"):
-        jogador1_id = partida.find("player1").get("userid")
-        jogador2_id = partida.find("player2").get("userid")
+        jogador1_id = None
+        jogador2_id = None
+        
+        jogador = partida.find("player")
+        if jogador is not None:
+            jogador1_id = jogador.get("userid")
+        else:
+            jogador1_id = partida.find("player1").get("userid")
+            jogador2_id = partida.find("player2").get("userid")
 
-        if jogador1_id is None or jogador2_id is None:
-            continue
         vencedor = int(partida.get("outcome"))
 
-        if vencedor == 1:
+        if vencedor != 2:
             vencedor = jogador1_id
         elif vencedor == 2:
             vencedor = jogador2_id
-        else:
-            vencedor = None
 
         mesa = int(partida.findtext("tablenumber"))
 

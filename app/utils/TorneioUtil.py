@@ -7,9 +7,11 @@ def retornar_torneio_completo(session: SessionDep, torneio: Torneio):
     torneio_dict = torneio.model_dump()
     
     torneio_dict["loja"] = torneio.loja
+    torneio_dict["jogadores"] = []
+    jogadores = session.exec(select(JogadorTorneioLink).where(JogadorTorneioLink.torneio_id == torneio.id)).all()
     for link in torneio.jogadores:
         colocacao = colocacao_jogador(session, torneio, link.jogador)
-        torneio_dict["jogadores"] = [
+        torneio_dict["jogadores"].append(
             {
                 "usuario_id": link.jogador.usuario_id,
                 "jogador_id": link.jogador_id,
@@ -18,8 +20,7 @@ def retornar_torneio_completo(session: SessionDep, torneio: Torneio):
                 "tipo_jogador_id": link.tipo_jogador_id,
                 "pontuacao": link.pontuacao,
                 "pontuacao_com_regras": link.pontuacao_com_regras
-            }
-        ]
+            })
     torneio_dict["jogadores"] = sorted(
         torneio_dict.get("jogadores", []),
         key=lambda jogador: jogador["colocacao"]

@@ -125,10 +125,11 @@ def calcular_forca_oponente(session: SessionDep, torneio: Torneio, link: Jogador
 
     taxas = []
     for op_id in oponentes_vencidos:
-        op_jogador = session.exec(select(Jogador).where(Jogador.pokemon_id == op_id)).first()
-        taxas.append(calcular_taxa_vitoria(session, op_jogador))
+        if op_id:
+            op_jogador = session.exec(select(Jogador).where(Jogador.pokemon_id == op_id)).first()
+            taxas.append(calcular_taxa_vitoria(session, op_jogador))
 
-    return sum(taxas) / len(taxas)
+    return sum(taxas) / len(taxas) if len(taxas) != 0 else 0
 
 def _descobrir_oponente(rodada: Rodada, jogador: str):
     oponente = "bye"

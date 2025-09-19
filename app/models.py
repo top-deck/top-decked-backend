@@ -99,7 +99,7 @@ class RodadaBase(SQLModel):
         default=None, foreign_key="jogador.pokemon_id", nullable=True)
     num_rodada: int = Field(default=None)
     mesa: Optional[int] = Field(default=None)
-    data_de_inicio: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=True), default=None)
+    data_de_inicio: date = Field(sa_column=Column(DateTime(timezone=True), nullable=True), default=None)
     finalizada: Optional[bool] = Field(default=False)
     
 class Rodada(RodadaBase, table=True):

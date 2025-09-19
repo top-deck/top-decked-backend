@@ -32,4 +32,4 @@ def parse_datetime(datetime_inicio_str: str) -> date:
         raise TopDeckedException.bad_request(
             "Data de início em formato inválido")
 
-    return data_hora
+    return data_hora.date()
