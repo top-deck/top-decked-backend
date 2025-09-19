@@ -98,6 +98,8 @@ def inserir_cartas():
     with Session(engine) as session:
         for carta in cartas:
             carta = Carta(**carta)
+            if session.get(Carta, carta.id):
+                break
             session.add(carta)
         session.commit()
 
