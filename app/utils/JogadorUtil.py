@@ -239,7 +239,7 @@ def retornar_todas_rodadas(session: SessionDep, jogador: Jogador):
             "rodada" : rodada.id,
             "mesa": rodada.mesa,
             "resultado": resultado,
-            "oponente": oponente.nome,
+            "oponente": oponente.nome if oponente else "bye",
         })
         
     return result
