@@ -53,11 +53,11 @@ def nova_rodada(session: SessionDep, torneio: Torneio):
         session.add(nova_rodada)
         
         jogando[jogador.jogador_id] = True
-        jogador_vde = retornar_vde_jogador(session, jogador, torneio)
+        jogador_vde = retornar_vde_jogador(session, jogador.jogador_id, torneio)
         
         if adversario:
             jogando[adversario.jogador_id] = True
-            adversario_vde = retornar_vde_jogador(session, adversario, torneio)
+            adversario_vde = retornar_vde_jogador(session, adversario.jogador_id, torneio)
             adversario = session.exec(select(Jogador)
                                         .where(Jogador.pokemon_id == adversario.jogador_id)).first()
         
